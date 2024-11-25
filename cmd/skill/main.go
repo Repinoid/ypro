@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,11 +9,33 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
-	gauge   map[string]gauge
-	counter map[string]counter
+	gau   map[string]gauge
+	count map[string]counter
 }
 
+func (ms *MemStorage) initMemStorage() error {
+	ms.gau = make(map[string]gauge)
+	ms.count = make(map[string]counter)
+	return nil
+}
+func (ms *MemStorage) addGauge(name string, value gauge) error {
+	ms.gau[name] = value
+	return nil
+}
+func (ms *MemStorage) addCounter(name string, value counter) error {
+	if _, ok := ms.count[name]; ok {
+		ms.count[name] += value
+		return nil
+	}
+	ms.count[name] = value
+	return nil
+}
+
+var memStor *MemStorage
+
 func main() {
+	memStor = new(MemStorage)
+	memStor.initMemStorage()
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -27,46 +48,51 @@ func run() error {
 func webhook(rwr http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { // разрешаем только POST-запросы
 		rwr.WriteHeader(http.StatusMethodNotAllowed)
-		rwr.Write([]byte("Only POST method is allowed"))
+		//		rwr.Write([]byte("Only POST method is allowed"))
 		return
 	}
 	rwr.Header().Set("Content-Type", "text/plain")
 
-	body := r.URL.String()
-	rwr.Write([]byte(body))
+	urla := r.URL.String()
+	splittedURL := strings.Split(urla, "/")
 
-	splisli := strings.Split(body, "/")
-	if len(splisli) < 5 {
+	if len(splittedURL) < 5 {
 		rwr.WriteHeader(http.StatusNotFound)
-		rwr.Write([]byte("StatusNotFound, man\n"))
+		//		rwr.Write([]byte("StatusNotFound, man\n"))
 		return
 	}
-	if splisli[1] != "update" || (splisli[2] != "gauge" && splisli[2] != "counter") {
+	metricType := splittedURL[2]
+	metricName := splittedURL[3]
+	metricValue := splittedURL[4]
+	if splittedURL[1] != "update" || (metricType != "gauge" && metricType != "counter") {
 		rwr.WriteHeader(http.StatusBadRequest)
-		rwr.Write([]byte("Bad Request, no \"update\"\n"))
+		//		rwr.Write([]byte("Bad Request, no \"update\"\n"))
 		return
-	}
-	if splisli[2] == "counter" {
-		_, err := strconv.ParseInt(splisli[4], 10, 64)
-		if err != nil {
-			rwr.WriteHeader(http.StatusBadRequest)
-			rwr.Write([]byte("Bad Request counter \n"))
-			return
-		}
-	}
-	if splisli[2] == "gauge" {
-		_, err := strconv.ParseFloat(splisli[4], 64)
-		if err != nil {
-			rwr.WriteHeader(http.StatusBadRequest)
-			rwr.Write([]byte("Bad Request gauge \n"))
-			return
-		}
 	}
 
-	outer := fmt.Sprintf("len %d\n", len(splisli))
-	for i, v := range splisli {
-		outer += fmt.Sprintf("%d %s\n", i, v)
+	if metricType == "counter" {
+		value, err := strconv.ParseInt(metricValue, 10, 64)
+		if err != nil {
+			rwr.WriteHeader(http.StatusBadRequest)
+			//			rwr.Write([]byte("Bad Request counter \n"))
+			return
+		}
+		memStor.addCounter(metricName, counter(value))
+	} else {
+		//	if metricType == "gauge" {
+		value, err := strconv.ParseFloat(metricValue, 64)
+		if err != nil {
+			rwr.WriteHeader(http.StatusBadRequest)
+			//			rwr.Write([]byte("Bad Request gauge \n"))
+			return
+		}
+		memStor.addGauge(metricName, gauge(value))
 	}
-	rwr.Write([]byte(outer))
+	rwr.WriteHeader(http.StatusOK)
+	//	outer := fmt.Sprintf("metrics %v\n", memStor)
+	//	for i, v := range splittedURL {
+	//		outer += fmt.Sprintf("%d %s\n", i, v)
+	//	}
+	//	rwr.Write([]byte(outer))
 
 }
