@@ -48,7 +48,7 @@ func run() error {
 func webhook(rwr http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { // разрешаем только POST-запросы
 		rwr.WriteHeader(http.StatusMethodNotAllowed)
-		//		rwr.Write([]byte("Only POST method is allowed"))
+		rwr.Write([]byte("Only POST method is allowed"))
 		return
 	}
 	rwr.Header().Set("Content-Type", "text/plain")
@@ -58,7 +58,7 @@ func webhook(rwr http.ResponseWriter, r *http.Request) {
 
 	if len(splittedURL) < 5 {
 		rwr.WriteHeader(http.StatusNotFound)
-		//		rwr.Write([]byte("StatusNotFound, man\n"))
+		rwr.Write([]byte("StatusNotFound, man len(splittedURL) < 5\n"))
 		return
 	}
 	metricType := splittedURL[2]
@@ -66,7 +66,7 @@ func webhook(rwr http.ResponseWriter, r *http.Request) {
 	metricValue := splittedURL[4]
 	if splittedURL[1] != "update" || (metricType != "gauge" && metricType != "counter") {
 		rwr.WriteHeader(http.StatusBadRequest)
-		//		rwr.Write([]byte("Bad Request, no \"update\"\n"))
+		//		rwr.Write([]byte("Bad Request, no \"update\" wrong metric name\n"))
 		return
 	}
 
@@ -74,7 +74,7 @@ func webhook(rwr http.ResponseWriter, r *http.Request) {
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
-			//			rwr.Write([]byte("Bad Request counter \n"))
+			//	rwr.Write([]byte("Bad Request counter \n"))
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
@@ -83,16 +83,11 @@ func webhook(rwr http.ResponseWriter, r *http.Request) {
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
-			//			rwr.Write([]byte("Bad Request gauge \n"))
+			//rwr.Write([]byte("Bad Request gauge \n"))
 			return
 		}
 		memStor.addGauge(metricName, gauge(value))
 	}
 	rwr.WriteHeader(http.StatusOK)
-	//	outer := fmt.Sprintf("metrics %v\n", memStor)
-	//	for i, v := range splittedURL {
-	//		outer += fmt.Sprintf("%d %s\n", i, v)
-	//	}
-	//	rwr.Write([]byte(outer))
 
 }

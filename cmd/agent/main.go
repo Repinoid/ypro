@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand/v2"
+	"net/http"
 	"runtime"
+	"strconv"
+	"time"
 )
 
 type gauge float64
@@ -55,15 +59,47 @@ func getMetrix(memStor *MemStorage) error {
 	}
 	return nil
 }
-
+func postMetric(metricType, metricName, metricValue string) int {
+	host := "http://localhost:8080"
+	url := host + "/update/" + metricType + "/" + metricName + "/" + metricValue
+	resp, err := http.Post(url, "text/plain", nil)
+	if err != nil {
+		return resp.StatusCode
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode
+}
 func main() {
+	if err := run(); err != nil {
+		panic(err)
+	}
+}
+
+func run() error {
 	memStor = new(MemStorage)
 
-	getMetrix(memStor)
-	for name, value := range memStor.gau {
-		fmt.Printf("Metrix Name: %[1]s  value of %[2]f\n", name, value)
+	for {
+		for i := 0; i < 5; i++ {
+			err := getMetrix(memStor)
+			if err != nil {
+				log.Println(err)
+			}
+			time.Sleep(2 * time.Second)
+		}
+		for name, value := range memStor.gau {
+			status := postMetric("gauge", name, strconv.FormatFloat(float64(value), 'f', 4, 64))
+			if status != http.StatusOK {
+				log.Println(status)
+			}
+			fmt.Printf("Metrix Name: %[1]s  value of %[2]f\n", name, value)
+		}
+		for name, value := range memStor.count {
+			status := postMetric("counter", name, strconv.FormatInt(int64(value), 10))
+			if status != http.StatusOK {
+				log.Println(status)
+			}
+			fmt.Printf("Metrix Name: %[1]s  value of %[2]d\n", name, value)
+		}
 	}
-	for name, value := range memStor.count {
-		fmt.Printf("Metrix Name: %[1]s  value of %[2]d\n", name, value)
-	}
+//	return nil
 }
