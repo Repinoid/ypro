@@ -23,9 +23,9 @@ func main() {
 	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Zero posterizan\n")
 	}).Methods("POST")
-	router.HandleFunc("/u", func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		//router.HandleFunc("/update/{metrixType}/{metrixName}/{metrixValue}", func(w http.ResponseWriter, req *http.Request) {
+	//router.HandleFunc("/u", func(w http.ResponseWriter, req *http.Request) {
+	//w.WriteHeader(http.StatusCreated)
+	router.HandleFunc("/update/{metrixType}/{metrixName}/{metrixValue}", func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
 		req.Header.Set("Content-Type", "text/plain")
 		metrixType := vars["metrixType"]

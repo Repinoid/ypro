@@ -61,11 +61,8 @@ func run() error {
 
 	router := http.NewServeMux()
 	router.HandleFunc("POST /update/{metricType}/{metricName}/{metricValue}", treatMetric)
-	//	router.HandleFunc("GET /{servak}/value/{metrixType}/{metrixName}", getMetric)
-	//	router.HandleFunc("GET /{servak}/", getAllMetrix)
-	router.HandleFunc("GET /http%2F%2F%2F%2F/a", func(rwr http.ResponseWriter, req *http.Request) {
-		fmt.Printf("URL %v %v\n", req.URL, req.PathValue("servak"))
-	})
+	router.HandleFunc("GET /value/{metricType}/{metricName}", getMetric)
+	router.HandleFunc("GET /", getAllMetrix)
 
 	return http.ListenAndServe(localPort, router)
 }
@@ -77,10 +74,11 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	fmt.Printf("servak %v body %v\n", servak, req.Body)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
-	var val string
+	val := "badly"
 	status := http.StatusBadRequest
 	metricType := req.PathValue("metricType")
 	metricName := req.PathValue("metricName")
+	fmt.Printf("name %s type %s lenofmemgau %d\n", metricName, metricType, len(memStor.gau))
 	if metricType == "gauge" {
 		status = memStor.getGaugeValue(metricName, &val)
 	}
@@ -91,6 +89,7 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(rwr, val)
 		rwr.WriteHeader(http.StatusOK)
 	} else {
+		fmt.Fprint(rwr, val)
 		rwr.WriteHeader(http.StatusBadRequest)
 	}
 

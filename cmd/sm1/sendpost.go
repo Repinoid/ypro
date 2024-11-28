@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	//"strings"
 )
 
@@ -13,10 +12,10 @@ func postMetric(metricType, metricName, metricValue string) error {
 
 	client := &http.Client{}
 	payloadStr := "/update/" + metricType + "/" + metricName + "/" + metricValue
-	payloadStr = "/u"
-	payload := strings.NewReader(payloadStr)
-	req, err := http.NewRequest(http.MethodPost, host, payload)
-	//req, err := http.NewRequest(http.MethodPost, host+payloadStr, nil)
+	//	payloadStr = "/u"
+	//	payload := strings.NewReader(payloadStr)
+	//	req, err := http.NewRequest(http.MethodPost, host, payload)
+	req, err := http.NewRequest(http.MethodPost, host+payloadStr, nil)
 	fmt.Printf("payload string ---  \"%[1]v\" type %[1]T\n", payloadStr)
 	fmt.Printf("req ---  \"%[1]v\" type %[1]T\n", req)
 	if err != nil {
@@ -44,8 +43,8 @@ func postMetric(metricType, metricName, metricValue string) error {
 	return nil
 }
 func main() {
-	stat := postMetric("1", "2", "3")
-	//	stat := postMetric("gauge", "Alloc", "55.66")
+	//	stat := postMetric("1", "2", "3")
+	stat := postMetric("gauge", "Alloc", "55.66")
 	fmt.Println("status ", stat)
 	//		panic(err)
 
