@@ -61,8 +61,11 @@ func run() error {
 
 	router := http.NewServeMux()
 	router.HandleFunc("POST /update/{metricType}/{metricName}/{metricValue}", treatMetric)
-	router.HandleFunc("GET /{servak}/value/{metrixType}/{metrixName}", getMetric)
-	router.HandleFunc("GET /{servak}/", getAllMetrix)
+	//	router.HandleFunc("GET /{servak}/value/{metrixType}/{metrixName}", getMetric)
+	//	router.HandleFunc("GET /{servak}/", getAllMetrix)
+	router.HandleFunc("GET /http%2F%2F%2F%2F/a", func(rwr http.ResponseWriter, req *http.Request) {
+		fmt.Printf("URL %v %v\n", req.URL, req.PathValue("servak"))
+	})
 
 	return http.ListenAndServe(localPort, router)
 }
@@ -71,6 +74,7 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	servak := req.PathValue("servak")
 	fmt.Fprint(rwr, servak)
 	rwr.WriteHeader(http.StatusOK)
+	fmt.Printf("servak %v body %v\n", servak, req.Body)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	var val string
