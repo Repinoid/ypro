@@ -1,6 +1,7 @@
 package main
 
 import (
+	//"fmt"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -68,17 +69,25 @@ func run() error {
 }
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
-	servak := req.PathValue("servak")
-	fmt.Fprint(rwr, servak)
+	if req.URL.Path != "/" {
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, "BadRequest with %s\n", req.URL.Path)
+		return
+	}
+
+	for nam, val := range memStor.gau {
+		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%6.4f\n", nam, val)
+	}
+	for nam, val := range memStor.count {
+		fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
+	}
 	rwr.WriteHeader(http.StatusOK)
-	fmt.Printf("servak %v body %v\n", servak, req.Body)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	val := "badly"
 	status := http.StatusBadRequest
 	metricType := req.PathValue("metricType")
 	metricName := req.PathValue("metricName")
-	fmt.Printf("name %s type %s lenofmemgau %d\n", metricName, metricType, len(memStor.gau))
 	if metricType == "gauge" {
 		status = memStor.getGaugeValue(metricName, &val)
 	}
@@ -89,7 +98,7 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(rwr, val)
 		rwr.WriteHeader(http.StatusOK)
 	} else {
-		fmt.Fprint(rwr, val)
+		fmt.Fprintf(rwr, "BadRequest, No value for %s of %s type\n", metricName, metricType)
 		rwr.WriteHeader(http.StatusBadRequest)
 	}
 

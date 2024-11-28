@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand/v2"
 	"net/http"
@@ -91,14 +90,12 @@ func run() error {
 			if status != http.StatusOK {
 				log.Println(status)
 			}
-			fmt.Printf("Metrix Name: %[1]s  value of %[2]f\n", name, value)
 		}
 		for name, value := range memStor.count {
 			status := postMetric("counter", name, strconv.FormatInt(int64(value), 10))
 			if status != http.StatusOK {
 				log.Println(status)
 			}
-			fmt.Printf("Metrix Name: %[1]s  value of %[2]d\n", name, value)
 		}
 	}
 }
