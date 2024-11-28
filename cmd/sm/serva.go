@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+const localPort = ":8080"
+
 func main() {
 	router := http.NewServeMux()
 
@@ -25,7 +27,7 @@ func main() {
 		fmt.Println(metrixType, metrixName, metrixValue)
 	})
 
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := http.ListenAndServe(localPort, router); err != nil {
 		fmt.Println(err.Error())
 	}
 }
