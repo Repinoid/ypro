@@ -1,28 +1,34 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	//"strings"
 )
 
 func postMetric(metricType, metricName, metricValue string) error {
 	host := "http://localhost:8080"
-	//	url := "/update/" + metricType + "/" + metricName + "/" + metricValue
 
 	client := &http.Client{}
 	payloadStr := "/update/" + metricType + "/" + metricName + "/" + metricValue
-	payload := strings.NewReader(payloadStr)
-	req, err := http.NewRequest("POST", host, payload)
+	//	payload := strings.NewReader(payloadStr)
+	reader := bytes.NewReader([]byte(payloadStr))
+	req, err := http.NewRequest(http.MethodPost, host, reader)
+	//req, err := http.NewRequest(http.MethodPost, host+payloadStr, nil)
+	fmt.Printf("plstr %[1]v type %[1]T\n", payloadStr)
+
 	if err != nil {
-		fmt.Println("NewRequest ",err)
+		fmt.Println("NewRequest ", err)
 		return err
 	}
-	req.Header.Add("Content-Type", "text/plain")
+	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Add("Accept", "text/html")
+	req.Header.Add("cache-control", "no-cache")
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Println("client.Do ",err)
+		fmt.Println("client.Do ", err)
 		return err
 	}
 	defer res.Body.Close()

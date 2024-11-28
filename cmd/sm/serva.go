@@ -15,7 +15,8 @@ func main() {
 		fmt.Fprintf(w, "Zero posterizan\n")
 	})
 	router.HandleFunc("POST /update/{metrixType}/{metrixName}/{metrixValue}", func(w http.ResponseWriter, req *http.Request) {
-		req.Header.Add("Content-Type", "text/plain")
+		req.Header.Set("Content-Type", "text/plain")
+		//	req.Header.Set("Content-Type", "application/json")
 		metrixType := req.PathValue("metrixType")
 		metrixName := req.PathValue("metrixName")
 		metrixValue := req.PathValue("metrixValue")
