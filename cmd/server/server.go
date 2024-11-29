@@ -1,10 +1,11 @@
 package main
 
 import (
-	//"fmt"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type gauge float64
@@ -42,7 +43,8 @@ func (ms *MemStorage) getCounterValue(name string, value *string) int {
 }
 func (ms *MemStorage) getGaugeValue(name string, value *string) int {
 	if _, ok := ms.gau[name]; ok {
-		*value = strconv.FormatFloat(float64(ms.gau[name]), 'f', 4, 64)
+		*value = strconv.FormatFloat(float64(ms.gau[name]), 'f', -1, 64)
+		//	*value = fmt.Sprintf("%f", ms.gau[name])
 		return http.StatusOK
 	}
 	return http.StatusNotFound
@@ -60,12 +62,19 @@ func main() {
 
 func run() error {
 
-	router := http.NewServeMux()
-	router.HandleFunc("POST /update/{metricType}/{metricName}/{metricValue}", treatMetric)
-	router.HandleFunc("GET /value/{metricType}/{metricName}", getMetric)
-	router.HandleFunc("GET /", getAllMetrix)
+	//	router := http.NewServeMux()
+	router := mux.NewRouter()
+	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
+	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
+	router.HandleFunc("/", getAllMetrix).Methods("GET")
+	router.HandleFunc("/", badPost).Methods("POST")
 
 	return http.ListenAndServe(localPort, router)
+}
+
+func badPost(rwr http.ResponseWriter, req *http.Request) {
+	rwr.WriteHeader(http.StatusNotFound)
+	fmt.Fprintf(rwr, "POST http.StatusNotFound with %s\n", req.URL.Path)
 }
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
@@ -76,7 +85,8 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	}
 
 	for nam, val := range memStor.gau {
-		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%6.4f\n", nam, val)
+		flo := strconv.FormatFloat(float64(val), 'f', -1, 64)
+		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
 	}
 	for nam, val := range memStor.count {
 		fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
@@ -84,10 +94,13 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	rwr.WriteHeader(http.StatusOK)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
 	val := "badly"
-	status := http.StatusBadRequest
-	metricType := req.PathValue("metricType")
-	metricName := req.PathValue("metricName")
+	status := http.StatusNotFound
+	metricType := vars["metricType"]
+	metricName := vars["metricName"]
+	//	metricType := req.PathValue("metricType")
+	//	metricName := req.PathValue("metricName")
 	if metricType == "gauge" {
 		status = memStor.getGaugeValue(metricName, &val)
 	}
@@ -95,20 +108,28 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		status = memStor.getCounterValue(metricName, &val)
 	}
 	if status == http.StatusOK {
-		fmt.Fprint(rwr, val)
 		rwr.WriteHeader(http.StatusOK)
+		fmt.Fprint(rwr, val)
 	} else {
+		rwr.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(rwr, "BadRequest, No value for %s of %s type\n", metricName, metricType)
-		rwr.WriteHeader(http.StatusBadRequest)
 	}
 
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
 	rwr.Header().Set("Content-Type", "text/plain")
-	metricType := req.PathValue("metricType")
-	metricName := req.PathValue("metricName")
-	metricValue := req.PathValue("metricValue")
+	metricType := vars["metricType"]
+	metricName := vars["metricName"]
+	metricValue := vars["metricValue"]
+	//	metricType := req.PathValue("metricType")
+	//	metricName := req.PathValue("metricName")
+	//	metricValue := req.PathValue("metricValue")
+	if metricValue == "" {
+		rwr.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
