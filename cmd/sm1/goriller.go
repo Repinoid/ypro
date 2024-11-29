@@ -9,7 +9,7 @@ import (
 
 const localPort = ":8080"
 
-func main() {
+func main1() {
 	//	router := http.NewServeMux()
 	router := mux.NewRouter().StrictSlash(true)
 	//	router.Headers("Content-Type", "text/plain")
