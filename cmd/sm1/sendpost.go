@@ -42,7 +42,7 @@ func postMetric(metricType, metricName, metricValue string) error {
 
 	return nil
 }
-func main() {
+func main1() {
 	//	stat := postMetric("1", "2", "3")
 	stat := postMetric("gauge", "Alloc", "55.66")
 	fmt.Println("status ", stat)
