@@ -3,19 +3,41 @@ package main
 import (
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPostMetric(t *testing.T) {
-	result1 := postMetric("gauge", "Alloc", "55.55")
-	if result1 != http.StatusOK {
-		t.Errorf("Result was incorrect, got: %d, want: %s.", result1, "http.StatusOK")
+	tsts := []struct { // добавляем слайс тестов
+		name                string
+		mtype, mname, value string
+		want                int
+	}{
+		{
+			name:  "simple test #1",                        // описываем каждый тест:
+			mtype: "gauge", mname: "Alloc", value: "55.55", // значения, которые будет принимать функция,
+			want: http.StatusOK, // и ожидаемый результат
+		},
+		{
+			name:  "simple test #1",                       // описываем каждый тест:
+			mtype: "gaug", mname: "Alloc", value: "55.55", // значения, которые будет принимать функция,
+			want: http.StatusBadRequest, // и ожидаемый результат
+		},
+		{
+			name:  "simple test #1",                          // описываем каждый тест:
+			mtype: "gauge", mname: "Alloc", value: "55ff.55", // значения, которые будет принимать функция,
+			want: http.StatusBadRequest, // и ожидаемый результат
+		},
 	}
-	result2 := postMetric("gaug", "Alloc", "55.55")
-	if result2 != http.StatusBadRequest {
-		t.Errorf("Result was incorrect, got: %d, want: %s.", result1, "http.StatusBadRequest")
-	}
-	result3 := postMetric("gauge", "Alloc", "a55.55")
-	if result3 != http.StatusBadRequest {
-		t.Errorf("Result was incorrect, got: %d, want: %s.", result1, "http.StatusBadRequest")
+
+	/*	for _, test := range tsts {
+		if sum := postMetric(test.mtype, test.mname, test.value); sum != test.want {
+			t.Errorf("%s: Sum() = %d, want %d", test.name, sum, test.want)
+		}
+	}*/
+	for _, test := range tsts {
+		//	t.Run(test.name, func(t *testing.T) {
+		assert.Equal(t, postMetric(test.mtype, test.mname, test.value), test.want)
+		//	})
 	}
 }
