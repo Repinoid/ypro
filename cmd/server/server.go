@@ -76,14 +76,17 @@ func run() error {
 }
 
 func badPost(rwr http.ResponseWriter, req *http.Request) {
+	rwr.Header().Set("Content-Type", "text/plain")
 	rwr.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(rwr, "POST http.StatusNotFound with %s\n", req.URL.Path)
+	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
+
 }
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
+	rwr.Header().Set("Content-Type", "text/plain")
 	if req.URL.Path != "/" {
 		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(rwr, "BadRequest with %s\n", req.URL.Path)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
 
@@ -97,6 +100,8 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	rwr.WriteHeader(http.StatusOK)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
+	rwr.Header().Set("Content-Type", "text/plain")
+
 	vars := mux.Vars(req)
 	val := "badly"
 	status := http.StatusNotFound
@@ -113,29 +118,32 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(rwr, val)
 	} else {
 		rwr.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(rwr, "BadRequest, No value for %s of %s type\n", metricName, metricType)
+		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 	}
 
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
 	rwr.Header().Set("Content-Type", "text/plain")
+	vars := mux.Vars(req)
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
 	metricValue := vars["metricValue"]
 	if metricValue == "" {
 		rwr.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
 	if metricType == "counter" {
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
@@ -143,11 +151,13 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
 		memStor.addGauge(metricName, gauge(value))
 	}
 	rwr.WriteHeader(http.StatusOK)
+	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
 
 func useServerArguments() int {
