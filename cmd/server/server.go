@@ -130,7 +130,8 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	metricName := vars["metricName"]
 	metricValue := vars["metricValue"]
 	if metricValue == "" {
-		rwr.WriteHeader(http.StatusNotFound)
+		//	rwr.WriteHeader(http.StatusNotFound)
+		rwr.WriteHeader(403)
 		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
