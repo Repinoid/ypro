@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -45,10 +44,6 @@ func (ms *MemStorage) getCounterValue(name string, value *string) int {
 func (ms *MemStorage) getGaugeValue(name string, value *string) int {
 	if _, ok := ms.gau[name]; ok {
 		*value = strconv.FormatFloat(float64(ms.gau[name]), 'f', -1, 64)
-<<<<<<< HEAD
-		//	*value = fmt.Sprintf("%f", ms.gau[name])
-=======
->>>>>>> 38c3569606ea0815eef45f7d80c153341d56e5cf
 		return http.StatusOK
 	}
 	return http.StatusNotFound
@@ -57,7 +52,7 @@ func (ms *MemStorage) getGaugeValue(name string, value *string) int {
 var memStor *MemStorage
 
 func main() {
-	if useServerArguments() != 0 {
+	if faa4server() != 0 {
 		return
 	}
 
@@ -70,10 +65,6 @@ func main() {
 
 func run() error {
 
-<<<<<<< HEAD
-	//	router := http.NewServeMux()
-=======
->>>>>>> 38c3569606ea0815eef45f7d80c153341d56e5cf
 	router := mux.NewRouter()
 	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
 	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
@@ -81,11 +72,6 @@ func run() error {
 	router.HandleFunc("/", badPost).Methods("POST")
 
 	return http.ListenAndServe(host, router)
-}
-
-func badPost(rwr http.ResponseWriter, req *http.Request) {
-	rwr.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(rwr, "POST http.StatusNotFound with %s\n", req.URL.Path)
 }
 
 func badPost(rwr http.ResponseWriter, req *http.Request) {
@@ -115,11 +101,6 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	status := http.StatusNotFound
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-<<<<<<< HEAD
-	//	metricType := req.PathValue("metricType")
-	//	metricName := req.PathValue("metricName")
-=======
->>>>>>> 38c3569606ea0815eef45f7d80c153341d56e5cf
 	if metricType == "gauge" {
 		status = memStor.getGaugeValue(metricName, &val)
 	}
@@ -142,20 +123,10 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
 	metricValue := vars["metricValue"]
-<<<<<<< HEAD
-	//	metricType := req.PathValue("metricType")
-	//	metricName := req.PathValue("metricName")
-	//	metricValue := req.PathValue("metricValue")
-=======
->>>>>>> 38c3569606ea0815eef45f7d80c153341d56e5cf
 	if metricValue == "" {
 		rwr.WriteHeader(http.StatusNotFound)
 		return
 	}
-<<<<<<< HEAD
-
-=======
->>>>>>> 38c3569606ea0815eef45f7d80c153341d56e5cf
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
 		return
@@ -176,28 +147,4 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		memStor.addGauge(metricName, gauge(value))
 	}
 	rwr.WriteHeader(http.StatusOK)
-}
-
-func useServerArguments() int {
-	hoster, exists := os.LookupEnv("ADDRESS")
-	if exists {
-		host = hoster
-		return 0
-	}
-	args := os.Args[1:]
-	for _, a := range args {
-		if len(a) < 3 {
-			fmt.Printf("unknown Argument -  %s\n", a)
-			return 1
-		}
-		flagus := a[:3]
-		switch flagus {
-		case "-a=":
-			host = a[3:]
-		default:
-			fmt.Printf("unknown Argument -  %s\n", a)
-			return 4
-		}
-	}
-	return 0
 }
