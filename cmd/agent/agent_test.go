@@ -30,14 +30,9 @@ func TestPostMetric(t *testing.T) {
 		},
 	}
 
-	/*	for _, test := range tsts {
-		if sum := postMetric(test.mtype, test.mname, test.value); sum != test.want {
-			t.Errorf("%s: Sum() = %d, want %d", test.name, sum, test.want)
-		}
-	}*/
 	for _, test := range tsts {
-		//	t.Run(test.name, func(t *testing.T) {
-		assert.Equal(t, postMetric(test.mtype, test.mname, test.value), test.want)
-		//	})
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, postMetric(test.mtype, test.mname, test.value), test.want)
+		})
 	}
 }

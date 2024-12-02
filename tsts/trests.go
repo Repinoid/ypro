@@ -21,7 +21,7 @@ func run() error {
 	//	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
 	//	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
 	//	router.HandleFunc("/", getAllMetrix).Methods("GET")
-	router.HandleFunc("POST /a{ABC}{$}", badPost) //.Methods("POST")
+	router.HandleFunc("/{ABC}{$}", badPost).Methods("POST")
 
 	return http.ListenAndServe(":8080", router)
 }
@@ -31,9 +31,9 @@ func badPost(rwr http.ResponseWriter, req *http.Request) {
 	//vars := req.PathValue("ABC")
 	//metricType := vars["abc"]
 	rwr.Header().Set("Content-Type", "text/plain")
-	rwr.WriteHeader(http.StatusNotFound)
+	rwr.WriteHeader(http.StatusOK)
 	//	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 	//	fmt.Fprintf(rwr, "value - %[1]v, type %[1]T", vars)
-	fmt.Fprintf(rwr, "len %d", len(vars))
+	fmt.Fprintf(rwr, "len %d val %s", len(vars), vars["ABC"])
 
 }
