@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -28,7 +29,7 @@ func run() error {
 }
 
 func badPost(rwr http.ResponseWriter, req *http.Request) {
-	req = mux.SetURLVars(req, map[string]string{"metricType": "gauge", "metricName": "Alloc", "metricValue": "77.77"})
+	//req = mux.SetURLVars(req, map[string]string{"metricType": "gauge", "metricName": "Alloc", "metricValue": "77.77"})
 	vars := mux.Vars(req)
 	//vars := req.PathValue("ABC")
 	metricType := vars["metricType"]
@@ -36,7 +37,7 @@ func badPost(rwr http.ResponseWriter, req *http.Request) {
 	metricValue := vars["metricValue"]
 	rwr.Header().Set("Content-Type", "text/plain")
 	rwr.WriteHeader(http.StatusNotFound)
-	//fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
-	//	fmt.Fprintf(rwr, "value - %[1]v, type %[1]T", vars)
-	fmt.Fprintln(rwr, metricType, metricName, metricValue)
+	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
+	fmt.Fprintf(rwr, "value - %[1]v, type %[1]T", vars)
+	log.Println(metricType, metricName, metricValue)
 }

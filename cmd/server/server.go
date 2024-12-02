@@ -124,15 +124,13 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
-	//req = mux.SetURLVars(req, map[string]string{"metricType": "gaug", "metricName": "Alloc", "metricValue": "77.77"})
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-	metricValue := vars["metricValue"]
-	if metricValue == "" {
-		//	rwr.WriteHeader(http.StatusNotFound)
-		rwr.WriteHeader(403)
+	metricValue, ok := vars["metricValue"]
+	if !ok {
+		rwr.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
