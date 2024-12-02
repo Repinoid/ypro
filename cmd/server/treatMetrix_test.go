@@ -23,7 +23,7 @@ func TestTrearMetrix(t *testing.T) {
 	}{
 		{
 			name: "Right case",
-			urla: "/update/gauge/Alloc/ggg",
+			urla: "/update/gaug/Alloc/77.77",
 			want: want{
 				code:        http.StatusBadRequest,
 				response:    `{"status":"StatusBadRequest"}`,

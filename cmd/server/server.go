@@ -18,11 +18,13 @@ type MemStorage struct {
 
 var host = "localhost:8080"
 
-func (ms *MemStorage) initMemStorage() error {
-	ms.gau = make(map[string]gauge)
-	ms.count = make(map[string]counter)
-	return nil
+func newMemStorage() MemStorage {
+	memStor := new(MemStorage)
+	memStor.gau = make(map[string]gauge)
+	memStor.count = make(map[string]counter)
+	return *memStor
 }
+
 func (ms *MemStorage) addGauge(name string, value gauge) error {
 	ms.gau[name] = value
 	return nil
@@ -50,15 +52,13 @@ func (ms *MemStorage) getGaugeValue(name string, value *string) int {
 	return http.StatusNotFound
 }
 
-var memStor *MemStorage
+var memStor MemStorage
 
 func main() {
 	if useServerArguments() != 0 {
 		return
 	}
-
-	memStor = new(MemStorage)
-	memStor.initMemStorage()
+	memStor = newMemStorage()
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -124,6 +124,7 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
+	//req = mux.SetURLVars(req, map[string]string{"metricType": "gaug", "metricName": "Alloc", "metricValue": "77.77"})
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
 	metricType := vars["metricType"]

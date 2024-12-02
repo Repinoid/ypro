@@ -23,11 +23,11 @@ func TestTrearMetrix(t *testing.T) {
 	}{
 		{
 			name: "Right case",
-			urla: "/abd",
-			//		urla: "/update/gauge/Alloc/ggg",
+			//			urla: "/abd",
+			urla: "/update/gauge/Alloc/77.77",
 			want: want{
 				code:        http.StatusNotFound,
-				response:    `{"status":"StatusNotFound1"}`,
+				response:    `{"status":"StatusNotFound"}`,
 				contentType: "text/plain",
 			},
 		},
@@ -36,9 +36,8 @@ func TestTrearMetrix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			_ := NewRouter()
-
 			request := httptest.NewRequest(http.MethodPost, tt.urla, nil)
+
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
 			badPost(w, request)
