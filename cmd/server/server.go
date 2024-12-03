@@ -22,7 +22,6 @@ func main() {
 	if faa4server() != 0 {
 		return
 	}
-
 	memStor = newMemStorage()
 	if err := run(); err != nil {
 		panic(err)
