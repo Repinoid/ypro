@@ -6,18 +6,20 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type gauge float64
 type counter int64
 type MemStorage struct {
-	gau   map[string]gauge
-	count map[string]counter
+	gau       map[string]gauge
+	count     map[string]counter
+	mutter    sync.RWMutex
+	PollCount int
 }
 
-var memStor *MemStorage
-var PollCount int
+// var memStor *MemStorage
 var host = "localhost:8080"
 var reportInterval = 10
 var pollInterval = 2
@@ -25,7 +27,10 @@ var pollInterval = 2
 func getMetrix(memStor *MemStorage) error {
 	var mS runtime.MemStats
 	runtime.ReadMemStats(&mS)
-	PollCount++
+	memStor.mutter.Lock() // MUTEXed
+	defer memStor.mutter.Unlock()
+
+	memStor.PollCount++
 	memStor.gau = map[string]gauge{
 		"Alloc":         gauge(mS.Alloc),
 		"BuckHashSys":   gauge(mS.BuckHashSys),
@@ -57,7 +62,7 @@ func getMetrix(memStor *MemStorage) error {
 		"RandomValue":   gauge(rand.Float64()),
 	}
 	memStor.count = map[string]counter{
-		"PollCount": counter(PollCount),
+		"PollCount": counter(memStor.PollCount),
 	}
 	return nil
 }
@@ -69,11 +74,11 @@ func postMetric(metricType, metricName, metricValue string) error {
 		defer resp.Body.Close()
 	}
 	return err
-	
+
 }
 
 func main() {
-	if faa4Agent() != 0 {
+	if foa4Agent() != nil {
 		return
 	}
 
@@ -83,27 +88,30 @@ func main() {
 }
 
 func run() error {
-	memStor = new(MemStorage)
+	memStor := new(MemStorage)
 
 	for {
 		for i := 0; i < reportInterval/pollInterval; i++ {
 			err := getMetrix(memStor)
 			if err != nil {
-				log.Println(err)
+				log.Println(err, "getMetrix")
 			}
 			time.Sleep(time.Duration(pollInterval) * time.Second)
 		}
 		for name, value := range memStor.gau {
-			status := postMetric("gauge", name, strconv.FormatFloat(float64(value), 'f', 4, 64))
-			if status != nil { //http.StatusOK {
-				log.Println(status)
+			valStr := strconv.FormatFloat(float64(value), 'f', 4, 64)
+			err := postMetric("gauge", name, valStr)
+			if err != nil {
+				log.Println(err, "gauge", name, valStr)
 			}
 		}
 		for name, value := range memStor.count {
-			status := postMetric("counter", name, strconv.FormatInt(int64(value), 10))
-			if status != nil { //http.StatusOK {
-				log.Println(status)
+			valStr := strconv.FormatInt(int64(value), 10)
+			err := postMetric("counter", name, valStr)
+			if err != nil {
+				log.Println(err, "counter", name, valStr)
 			}
 		}
+		memStor.PollCount = 0
 	}
 }
