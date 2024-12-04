@@ -34,12 +34,12 @@ func run() error {
 	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
 	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
 	router.HandleFunc("/", getAllMetrix).Methods("GET")
-	router.HandleFunc("/", badPost).Methods("POST")
+	router.HandleFunc("/", badPost).Methods("POST")	// if POST with wrong arguments structure
 
 	return http.ListenAndServe(host, router)
 }
 
-func badPost(rwr http.ResponseWriter, req *http.Request) {
+func badPost(rwr http.ResponseWriter, req *http.Request) {		
 	rwr.Header().Set("Content-Type", "text/plain")
 	rwr.WriteHeader(http.StatusNotFound)
 	//	fmt.Fprintf(rwr, "POST http.StatusNotFound with %s\n", req.URL.Path)
@@ -48,13 +48,13 @@ func badPost(rwr http.ResponseWriter, req *http.Request) {
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
-	if req.URL.Path != "/" {
+	if req.URL.Path != "/" {						// if GET with wrong arguments structure
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
 	for nam, val := range memStor.gau {
-		flo := strconv.FormatFloat(float64(val), 'f', -1, 64)
+		flo := strconv.FormatFloat(float64(val), 'f', -1, 64)		// -1 - to remove zeroes tail
 		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
 	}
 	for nam, val := range memStor.count {
@@ -65,8 +65,8 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
-	val := "badly"
-	status := http.StatusNotFound
+	val := "badly"						// does not matter what initial value, could be "var val string"
+	status := http.StatusNotFound		// this remains if getGaugeValue or getCounterValue don't work
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
 	if metricType == "gauge" {

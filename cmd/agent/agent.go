@@ -69,10 +69,7 @@ func postMetric(metricType, metricName, metricValue string) error {
 		defer resp.Body.Close()
 	}
 	return err
-	/*	if err != nil {
-			return resp.StatusCode
-		}
-		return resp.StatusCode*/
+	
 }
 
 func main() {
