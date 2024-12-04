@@ -91,8 +91,10 @@ func run() error {
 	memStor := new(MemStorage)
 
 	for {
+		cunt := 0
 		for i := 0; i < reportInterval/pollInterval; i++ {
 			err := getMetrix(memStor)
+			cunt++
 			if err != nil {
 				log.Println(err, "getMetrix")
 			}
@@ -105,13 +107,17 @@ func run() error {
 				log.Println(err, "gauge", name, valStr)
 			}
 		}
-		for name, value := range memStor.count {
-			valStr := strconv.FormatInt(int64(value), 10)
+		for name, _ := range memStor.count {
+			valStr := strconv.FormatInt(int64(cunt), 10)
 			err := postMetric("counter", name, valStr)
 			if err != nil {
 				log.Println(err, "counter", name, valStr)
 			}
 		}
-		memStor.PollCount = 0
+		err := postMetric("counter", "PollCount", "-1")
+		if err != nil {
+			log.Println(err, "counter", "PollCount", "-1")
+		}
+		//memStor.PollCount = 0
 	}
 }

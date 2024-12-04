@@ -106,6 +106,9 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
+		//		if metricName == "PollCount" && value < 0 {
+		//			_ = memStor.resetPollCount()
+		//		}
 	} else { //	if metricType == "gauge" {
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -21,6 +22,14 @@ func (ms *MemStorage) addCounter(name string, value counter) error {
 		return nil
 	}
 	ms.count[name] = value
+	return nil
+}
+func (ms *MemStorage) resetPollCount() error {
+	if _, ok := ms.count["PollCount"]; ok {
+		ms.count["PollCount"] = 0
+	} else {
+		return fmt.Errorf("no PollCount")
+	}
 	return nil
 }
 func (ms *MemStorage) getCounterValue(name string, value *string) int {
