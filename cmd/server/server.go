@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -11,11 +12,12 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
+	mutter *sync.RWMutex
 	gau   map[string]gauge
 	count map[string]counter
 }
 
-var memStor MemStorage
+var memStor *MemStorage
 var host = "localhost:8080"
 
 func main() {

@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
-func newMemStorage() MemStorage {
-	memStor := new(MemStorage)
-	memStor.gau = make(map[string]gauge)
-	memStor.count = make(map[string]counter)
-	return *memStor
+func newMemStorage() *MemStorage {
+	return &MemStorage{
+		mutter: &sync.RWMutex{},
+		gau : make(map[string]gauge),
+		count : make(map[string]counter),
+	}
+//	return &ret
 }
 func (ms *MemStorage) addGauge(name string, value gauge) error {
 	ms.gau[name] = value

@@ -107,7 +107,7 @@ func run() error {
 				log.Println(err, "gauge", name, valStr)
 			}
 		}
-		for name, _ := range memStor.count {
+		for name := range memStor.count {
 			valStr := strconv.FormatInt(int64(cunt), 10)
 			err := postMetric("counter", name, valStr)
 			if err != nil {
@@ -118,6 +118,5 @@ func run() error {
 		if err != nil {
 			log.Println(err, "counter", "PollCount", "-1")
 		}
-		//memStor.PollCount = 0
 	}
 }
