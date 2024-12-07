@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -39,16 +40,14 @@ func postMetric() error {
 		defer res.Body.Close()
 	*/
 
-	/*	body1, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("erra io.ReadAll %w ", err)
-		}*/
-	var p []byte
-	n, err := resp.Body.Read(p)
+	body1, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("erra io.ReadAll %w ", err)
 	}
-	fmt.Printf("body ...%v ... bodyread %v  bytes %d\n", "string(body1)", p, n)
+	//	var p []byte
+	//	n, err := resp.Body.Read(p)
+
+	fmt.Printf("body ...%v ... \n", string(body1))
 
 	return nil
 }
