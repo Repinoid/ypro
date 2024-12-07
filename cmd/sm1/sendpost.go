@@ -3,49 +3,47 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 	//"strings"
 )
 
-func postMetric(metricType, metricName, metricValue string) error {
-	host := "http://localhost:8080"
+func postMetric() error {
+	//host := "http://localhost:8080"
 
-	client := &http.Client{}
-	payloadStr := "/update/" + metricType + "/" + metricName + "/" + metricValue
-	//	payloadStr = "/u"
-	//	payload := strings.NewReader(payloadStr)
-	//	req, err := http.NewRequest(http.MethodPost, host, payload)
-	req, err := http.NewRequest(http.MethodPost, host+payloadStr, nil)
-	fmt.Printf("payload string ---  \"%[1]v\" type %[1]T\n", payloadStr)
-	fmt.Printf("req ---  \"%[1]v\" type %[1]T\n", req)
+	//urla := "/s"
+
+	//var jsonStr = []byte(`{"t":"B"}`)
+	req, err := http.NewRequest("POST", "http://localhost:8080/s", strings.NewReader("zalupan"))
+	//req, err := http.NewRequest("POST", "http://localhost:8080/s", bytes.NewBuffer(jsonStr))
 	if err != nil {
-		fmt.Println("NewRequest ", err)
-		return err
+		return fmt.Errorf("erra http.NewRequest %w ", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
 
-	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Add("Accept", "text/html")
-	req.Header.Add("cache-control", "no-cache")
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Println("client.Do ", err)
-		return err
+		return fmt.Errorf("client.Do http.NewRequest %w ", err)
 	}
 	defer res.Body.Close()
 
 	body1, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println("io.ReadAll ", err)
-		return err
+		return fmt.Errorf("erra io.ReadAll %w ", err)
 	}
-	fmt.Printf("body ...%v\n", string(body1))
+	fmt.Printf("body ...%v ...\n", string(body1))
 
 	return nil
 }
-func main1() {
+func main() {
 	//	stat := postMetric("1", "2", "3")
-	stat := postMetric("gauge", "Alloc", "55.66")
-	fmt.Println("status ", stat)
+	err := postMetric()
+	if err != nil {
+		log.Fatalf("fatalled postmetric -->\n%v\n<---\n", err)
+	}
+	fmt.Println("status ", err)
 	//		panic(err)
 
 }
