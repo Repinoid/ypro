@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -11,18 +13,27 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
-	gau   map[string]gauge
-	count map[string]counter
+	gau    map[string]gauge
+	count  map[string]counter
+	mutter sync.RWMutex
 }
 
 var memStor MemStorage
 var host = "localhost:8080"
 
 func main() {
-	if faa4server() != 0 {
+	if err := foa4Server(); err != nil {
+		log.Println(err, " no success for foa4Server() ")
 		return
 	}
-	memStor = newMemStorage()
+
+	var err error
+	memStor, err = newMemStorage()
+	if err != nil {
+		log.Println(err, "error creating memstorage ")
+		return
+	}
+
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -42,7 +53,6 @@ func run() error {
 func badPost(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
 	rwr.WriteHeader(http.StatusNotFound)
-	//	fmt.Fprintf(rwr, "POST http.StatusNotFound with %s\n", req.URL.Path)
 	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 }
 
@@ -54,6 +64,8 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 	rwr.WriteHeader(http.StatusOK)
+	memStor.mutter.RLock() // <---- MUTEX
+	defer memStor.mutter.RUnlock()
 	for nam, val := range memStor.gau {
 		flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
 		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
@@ -65,22 +77,25 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
-	val := "badly"                // does not matter what initial value, could be "var val string"
-	status := http.StatusNotFound // this remains if getGaugeValue or getCounterValue don't work
+	val := "badly" // does not matter what initial value, could be "var val string"
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
+	if metricType != "gauge" && metricType != "counter" {
+		rwr.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var err error
 	if metricType == "gauge" {
-		status = memStor.getGaugeValue(metricName, &val)
+		err = memStor.getGaugeValue(metricName, &val)
+	} else { //if metricType == "counter" {
+		err = memStor.getCounterValue(metricName, &val)
 	}
-	if metricType == "counter" {
-		status = memStor.getCounterValue(metricName, &val)
-	}
-	if status == http.StatusOK {
+	if err == nil {
 		rwr.WriteHeader(http.StatusOK)
 		fmt.Fprint(rwr, val)
 	} else {
 		rwr.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(rwr, "BadRequest, No value for %s of %s type\n", metricName, metricType)
+		log.Printf("BadRequest, No value for %s of %s type", metricName, metricType)
 	}
 }
 
@@ -95,6 +110,7 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		rwr.WriteHeader(http.StatusNotFound)
 		return
 	}
+	rwr.WriteHeader(http.StatusOK)
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
 		return
@@ -106,9 +122,6 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
-		//		if metricName == "PollCount" && value < 0 {
-		//			_ = memStor.resetPollCount()
-		//		}
 	} else { //	if metricType == "gauge" {
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
@@ -117,5 +130,4 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		}
 		memStor.addGauge(metricName, gauge(value))
 	}
-	rwr.WriteHeader(http.StatusOK)
 }

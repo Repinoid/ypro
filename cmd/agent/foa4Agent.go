@@ -15,7 +15,7 @@ func foa4Agent() error {
 	enva, exists = os.LookupEnv("REPORT_INTERVAL")
 	if exists {
 		var err error
-		reportInterval, err = strconv.Atoi(enva)
+		reportInterval, err  = strconv.Atoi(enva)
 		if err != nil {
 			log.Fatalf("REPORT_INTERVAL error value %s\t error %v\n", enva, err)
 		}

@@ -13,10 +13,10 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
-	gau       map[string]gauge
-	count     map[string]counter
-	mutter    sync.RWMutex
-	PollCount int
+	gau    map[string]gauge
+	count  map[string]counter
+	mutter sync.RWMutex
+	//	PollCount int
 }
 
 // var memStor *MemStorage
@@ -30,7 +30,7 @@ func getMetrix(memStor *MemStorage) error {
 	memStor.mutter.Lock() // MUTEXed
 	defer memStor.mutter.Unlock()
 
-	memStor.PollCount++
+	//	memStor.PollCount++
 	memStor.gau = map[string]gauge{
 		"Alloc":         gauge(mS.Alloc),
 		"BuckHashSys":   gauge(mS.BuckHashSys),
@@ -59,29 +59,27 @@ func getMetrix(memStor *MemStorage) error {
 		"StackSys":      gauge(mS.StackSys),
 		"Sys":           gauge(mS.Sys),
 		"TotalAlloc":    gauge(mS.TotalAlloc),
-		"RandomValue":   gauge(rand.Float64()),
+		"RandomValue":   gauge(rand.Float64()), // self-defined
 	}
 	memStor.count = map[string]counter{
-		"PollCount": counter(memStor.PollCount),
+		"PollCount": counter(0), // self-defined
 	}
 	return nil
 }
 func postMetric(metricType, metricName, metricValue string) error {
-
 	url := "http://" + host + "/update/" + metricType + "/" + metricName + "/" + metricValue
 	resp, err := http.Post(url, "text/plain", nil)
 	if err == nil {
 		defer resp.Body.Close()
 	}
 	return err
-
 }
 
 func main() {
-	if foa4Agent() != nil {
+	if err := foa4Agent(); err != nil {
+		log.Println(err, " no success for foa4Agent() ")
 		return
 	}
-
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -89,14 +87,14 @@ func main() {
 
 func run() error {
 	memStor := new(MemStorage)
-
 	for {
 		cunt := 0
 		for i := 0; i < reportInterval/pollInterval; i++ {
 			err := getMetrix(memStor)
-			cunt++
 			if err != nil {
 				log.Println(err, "getMetrix")
+			} else {
+				cunt++
 			}
 			time.Sleep(time.Duration(pollInterval) * time.Second)
 		}
@@ -107,17 +105,12 @@ func run() error {
 				log.Println(err, "gauge", name, valStr)
 			}
 		}
-		for name, _ := range memStor.count {
+		for name := range memStor.count {
 			valStr := strconv.FormatInt(int64(cunt), 10)
 			err := postMetric("counter", name, valStr)
 			if err != nil {
 				log.Println(err, "counter", name, valStr)
 			}
 		}
-		err := postMetric("counter", "PollCount", "-1")
-		if err != nil {
-			log.Println(err, "counter", "PollCount", "-1")
-		}
-		//memStor.PollCount = 0
 	}
 }
