@@ -13,16 +13,12 @@ const localPort = "localhost:8080"
 func main() {
 	router := mux.NewRouter()
 	router.Headers("Content-Type", "application/json")
-	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		vars := mux.Vars(req)
-		fmt.Fprintf(w, "Welcome %v\n", vars)
-		fmt.Println("Welcome to the home page!!!!!")
-	}).Methods("GET")
+
 	router.HandleFunc("/s", treat).Methods("POST")
 	router.HandleFunc("/", treat).Methods("POST")
 
 	if err := http.ListenAndServe(localPort, router); err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("ёпта ...", err.Error())
 	}
 }
 
@@ -33,7 +29,7 @@ func treat(rwr http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(rwr, "body %v\n", string(b))
-	fmt.Printf("%s", b)
+	fmt.Fprintf(rwr, "fmt.Fprintf(rwr body %v\n", string(b))
+	fmt.Printf("aaaaaaaaaaaaaaa %s", b)
 
 }

@@ -17,14 +17,14 @@ func TestMemStorage_addGauge(t *testing.T) {
 
 		{
 			name:        "gaaga Ok tst",
-			ms:          &memStor,
+			ms:          memStor,
 			metricName:  "Alloc",
 			metricValue: gauge(77.77),
 			wantErr:     nil,
 		},
 		{
 			name:        "gaaga bad name tst",
-			ms:          &memStor,
+			ms:          memStor,
 			metricName:  "Alloca",
 			metricValue: gauge(77.77),
 			wantErr:     nil,
@@ -47,7 +47,7 @@ func TestMemStorage_getGaugeValue(t *testing.T) {
 	}{
 		{
 			name:        "not existing name",
-			ms:          &memStor,
+			ms:          memStor,
 			metricName:  "wtf",
 			metricValue: "",
 		},

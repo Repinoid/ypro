@@ -3,24 +3,13 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"sync"
 )
 
-<<<<<<< HEAD
-func newMemStorage() *MemStorage {
-	return &MemStorage{
-		mutter: &sync.RWMutex{},
-		gau : make(map[string]gauge),
-		count : make(map[string]counter),
-	}
-//	return &ret
-=======
-func newMemStorage() (MemStorage, error) {
+func newMemStorage() (*MemStorage, error) {
 	memStor := new(MemStorage)
 	memStor.gau = make(map[string]gauge)
 	memStor.count = make(map[string]counter)
-	return *memStor, nil
->>>>>>> 3a4833708c655630ca9e1b2b221add7df5364d30
+	return memStor, nil
 }
 func (ms *MemStorage) addGauge(name string, value gauge) error {
 	ms.mutter.Lock()

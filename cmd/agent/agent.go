@@ -112,12 +112,5 @@ func run() error {
 				log.Println(err, "counter", name, valStr)
 			}
 		}
-<<<<<<< HEAD
-		err := postMetric("counter", "PollCount", "-1")
-		if err != nil {
-			log.Println(err, "counter", "PollCount", "-1")
-		}
-=======
->>>>>>> 3a4833708c655630ca9e1b2b221add7df5364d30
 	}
 }

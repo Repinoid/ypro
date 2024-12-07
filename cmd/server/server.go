@@ -13,15 +13,9 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
-<<<<<<< HEAD
-	mutter *sync.RWMutex
-	gau   map[string]gauge
-	count map[string]counter
-=======
 	gau    map[string]gauge
 	count  map[string]counter
 	mutter sync.RWMutex
->>>>>>> 3a4833708c655630ca9e1b2b221add7df5364d30
 }
 
 var memStor *MemStorage
