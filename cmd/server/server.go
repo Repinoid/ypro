@@ -87,27 +87,24 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	val := "badly" // does not matter what initial value, could be "var val string"
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-	if metricType != "gauge" && metricType != "counter" {
-		rwr.WriteHeader(http.StatusBadRequest)
-		return
-	}
 	var err error
 
-
-
-	
-	if metricType == "gauge" {
-		err = memStor.getGaugeValue(metricName, &val)
-	} else { //if metricType == "counter" {
+	switch metricType {
+	case "counter":
 		err = memStor.getCounterValue(metricName, &val)
+	case "gauge":
+		err = memStor.getGaugeValue(metricName, &val)
+	default:
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(rwr, nil)
+		return
 	}
-	if err == nil {
-		rwr.WriteHeader(http.StatusOK)
-		fmt.Fprint(rwr, val)
-	} else {
+	if err != nil {
 		rwr.WriteHeader(http.StatusNotFound)
-		log.Printf("BadRequest, No value for %s of %s type", metricName, metricType)
+		fmt.Fprint(rwr, nil)
+		return
 	}
+	fmt.Fprint(rwr, val)
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
