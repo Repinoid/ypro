@@ -13,18 +13,12 @@ import (
 type gauge float64
 type counter int64
 type MemStorage struct {
-<<<<<<< HEAD
-	mutter *sync.RWMutex
-	gau   map[string]gauge
-	count map[string]counter
-=======
 	gau    map[string]gauge
 	count  map[string]counter
 	mutter sync.RWMutex
->>>>>>> 3a4833708c655630ca9e1b2b221add7df5364d30
 }
 
-var memStor *MemStorage
+var memStor MemStorage
 var host = "localhost:8080"
 
 func main() {
@@ -33,11 +27,9 @@ func main() {
 		return
 	}
 
-	var err error
-	memStor, err = newMemStorage()
-	if err != nil {
-		log.Println(err, "error creating memstorage ")
-		return
+	memStor = MemStorage{
+		gau:   make(map[string]gauge),
+		count: make(map[string]counter),
 	}
 
 	if err := run(); err != nil {
@@ -116,7 +108,6 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		rwr.WriteHeader(http.StatusNotFound)
 		return
 	}
-	rwr.WriteHeader(http.StatusOK)
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
 		return
@@ -136,4 +127,5 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		}
 		memStor.addGauge(metricName, gauge(value))
 	}
+	rwr.WriteHeader(http.StatusOK)
 }

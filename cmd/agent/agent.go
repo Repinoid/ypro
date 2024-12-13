@@ -77,7 +77,7 @@ func postMetric(metricType, metricName, metricValue string) error {
 
 func main() {
 	if err := foa4Agent(); err != nil {
-		log.Println(err, " no success for foa4Agent() ")
+		log.Fatal("INTERVAL error ", err)
 		return
 	}
 	if err := run(); err != nil {
@@ -112,12 +112,5 @@ func run() error {
 				log.Println(err, "counter", name, valStr)
 			}
 		}
-<<<<<<< HEAD
-		err := postMetric("counter", "PollCount", "-1")
-		if err != nil {
-			log.Println(err, "counter", "PollCount", "-1")
-		}
-=======
->>>>>>> 3a4833708c655630ca9e1b2b221add7df5364d30
 	}
 }
