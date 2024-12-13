@@ -106,16 +106,19 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	metricValue := vars["metricValue"]
 	if metricValue == "" {
 		rwr.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
 	if metricType != "gauge" && metricType != "counter" {
 		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
 	if metricType == "counter" {
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
@@ -123,9 +126,11 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
 		memStor.addGauge(metricName, gauge(value))
 	}
-	rwr.WriteHeader(http.StatusOK)
+	//	rwr.WriteHeader(http.StatusOK)
+	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
