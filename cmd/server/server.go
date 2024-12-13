@@ -92,6 +92,10 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var err error
+
+
+
+	
 	if metricType == "gauge" {
 		err = memStor.getGaugeValue(metricName, &val)
 	} else { //if metricType == "counter" {
@@ -109,7 +113,6 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
-	rwr.Header().Set("Content-Type", "text/plain")
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
 	metricValue := vars["metricValue"]
@@ -118,12 +121,8 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
-	if metricType != "gauge" && metricType != "counter" {
-		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
-		return
-	}
-	if metricType == "counter" {
+	switch metricType {
+	case "counter":
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
@@ -131,7 +130,7 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
-	} else { //	if metricType == "gauge" {
+	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
@@ -139,8 +138,11 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addGauge(metricName, gauge(value))
+	default:
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
+		return
 	}
-	//	rwr.WriteHeader(http.StatusOK)
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
 
