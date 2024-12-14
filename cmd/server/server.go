@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 type gauge float64
@@ -20,6 +21,7 @@ type MemStorage struct {
 
 var memStor MemStorage
 var host = "localhost:8080"
+var sugar zap.SugaredLogger
 
 func main() {
 	if err := foa4Server(); err != nil {
@@ -40,10 +42,17 @@ func main() {
 func run() error {
 
 	router := mux.NewRouter()
-	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
-	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
-	router.HandleFunc("/", getAllMetrix).Methods("GET")
-	router.HandleFunc("/", badPost).Methods("POST") // if POST with wrong arguments structure
+	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", WithLogging(treatMetric)).Methods("POST")
+	router.HandleFunc("/value/{metricType}/{metricName}", WithLogging(getMetric)).Methods("GET")
+	router.HandleFunc("/", WithLogging(getAllMetrix)).Methods("GET")
+	router.HandleFunc("/", WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
+
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic("cannot initialize zap")
+	}
+	defer logger.Sync()
+	sugar = *logger.Sugar()
 
 	return http.ListenAndServe(host, router)
 }
@@ -78,29 +87,29 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	val := "badly" // does not matter what initial value, could be "var val string"
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-	if metricType != "gauge" && metricType != "counter" {
+	var err error
+
+	switch metricType {
+	case "counter":
+		err = memStor.getCounterValue(metricName, &val)
+	case "gauge":
+		err = memStor.getGaugeValue(metricName, &val)
+	default:
 		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(rwr, nil)
 		return
 	}
-	var err error
-	if metricType == "gauge" {
-		err = memStor.getGaugeValue(metricName, &val)
-	} else { //if metricType == "counter" {
-		err = memStor.getCounterValue(metricName, &val)
-	}
-	if err == nil {
-		rwr.WriteHeader(http.StatusOK)
-		fmt.Fprint(rwr, val)
-	} else {
+	if err != nil {
 		rwr.WriteHeader(http.StatusNotFound)
-		log.Printf("BadRequest, No value for %s of %s type", metricName, metricType)
+		fmt.Fprint(rwr, nil)
+		return
 	}
+	fmt.Fprint(rwr, val)
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
-	rwr.Header().Set("Content-Type", "text/plain")
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
 	metricValue := vars["metricValue"]
@@ -109,12 +118,8 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
-	if metricType != "gauge" && metricType != "counter" {
-		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
-		return
-	}
-	if metricType == "counter" {
+	switch metricType {
+	case "counter":
 		value, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
@@ -122,7 +127,7 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addCounter(metricName, counter(value))
-	} else { //	if metricType == "gauge" {
+	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
@@ -130,7 +135,12 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addGauge(metricName, gauge(value))
+	default:
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
+		return
 	}
-	//	rwr.WriteHeader(http.StatusOK)
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
+
+// metricstest -test.v -test.run="^TestIteration6[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/
