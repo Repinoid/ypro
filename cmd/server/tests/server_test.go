@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getMetric(t *testing.T) {
+func Test_treatMetric(t *testing.T) {
 	type want struct {
 		code        int
 		response    string

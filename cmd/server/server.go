@@ -18,6 +18,14 @@ type MemStorage struct {
 	count  map[string]counter
 	mutter sync.RWMutex
 }
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
+
+const ContentType = "text/plain"
 
 var memStor MemStorage
 var host = "localhost:8080"
@@ -43,7 +51,9 @@ func run() error {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", WithLogging(treatMetric)).Methods("POST")
+	router.HandleFunc("/update/", WithLogging(treatJSONMetric)).Methods("POST")
 	router.HandleFunc("/value/{metricType}/{metricName}", WithLogging(getMetric)).Methods("GET")
+	router.HandleFunc("/value/", WithLogging(getJSONMetric)).Methods("POST")
 	router.HandleFunc("/", WithLogging(getAllMetrix)).Methods("GET")
 	router.HandleFunc("/", WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
 
@@ -58,13 +68,13 @@ func run() error {
 }
 
 func badPost(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", "text/plain")
+	rwr.Header().Set("Content-Type", ContentType)
 	rwr.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 }
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", "text/plain")
+	rwr.Header().Set("Content-Type", ContentType)
 	if req.URL.Path != "/" { // if GET with wrong arguments structure
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
@@ -82,7 +92,7 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	}
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", "text/plain")
+	rwr.Header().Set("Content-Type", ContentType)
 	vars := mux.Vars(req)
 	val := "badly" // does not matter what initial value, could be "var val string"
 	metricType := vars["metricType"]
@@ -108,7 +118,7 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", "text/plain")
+	rwr.Header().Set("Content-Type", ContentType)
 	vars := mux.Vars(req)
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
