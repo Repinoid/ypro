@@ -8,9 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_treatMetric(t *testing.T) {
+func Test_getMetric(t *testing.T) {
 	type want struct {
 		code        int
 		response    string
@@ -85,10 +86,10 @@ func Test_treatMetric(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 
-			resBody, err := io.ReadAll(res.Body)
 			defer res.Body.Close()
-			assert.NoError(t, err)
+			resBody, err := io.ReadAll(res.Body)
 
+			require.NoError(t, err)
 			assert.JSONEq(t, tt.want.response, string(resBody))
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 		})

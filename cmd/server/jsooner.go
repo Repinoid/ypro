@@ -23,17 +23,17 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
-	//	metricType := metra.MType
-	//	metricName := metra.ID
-	//	metricValue := metra.Value
-	//	metricDelta := metra.Delta
-
 	switch metra.MType {
 	case "counter":
 		//err = memStor.getCounterValue(metricName, &val)
-		memStor.mutter.RLock() // <---- MUTEX
-		*metra.Delta = int64(memStor.count[metra.ID])
-		memStor.mutter.RUnlock()
+		var cunt counter
+		if memStor.getCounterValue(metra.ID, &cunt) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		delt := int64(cunt)
+		metra.Delta = &delt
 		resp, err := json.Marshal(metra)
 		if err != nil {
 			http.Error(rwr, err.Error(), http.StatusInternalServerError)
@@ -42,9 +42,14 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 		rwr.Write(resp)
 	case "gauge":
 		//		err = memStor.getGaugeValue(metricName, &val)
-		memStor.mutter.RLock() // <---- MUTEX
-		*metra.Value = float64(memStor.gau[metra.ID])
-		memStor.mutter.RUnlock()
+		var gaaga gauge
+		if memStor.getGaugeValue(metra.ID, &gaaga) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		flo := float64(gaaga)
+		metra.Value = &flo
 		resp, err := json.Marshal(metra)
 		if err != nil {
 			http.Error(rwr, err.Error(), http.StatusInternalServerError)
@@ -93,9 +98,15 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addCounter(metricName, counter(*metricDelta))
-		memStor.mutter.RLock() // <---- MUTEX
-		*metra.Delta = int64(memStor.count[metra.ID])
-		memStor.mutter.RUnlock()
+		// get new value from memstorage
+		var cunt counter
+		if memStor.getCounterValue(metra.ID, &cunt) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		*metra.Delta = int64(cunt)
+
 		resp, err := json.Marshal(metra)
 		if err != nil {
 			http.Error(rwr, err.Error(), http.StatusInternalServerError)
@@ -109,9 +120,15 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		memStor.addGauge(metricName, gauge(*metricValue))
-		memStor.mutter.RLock() // <---- MUTEX
-		*metra.Value = float64(memStor.gau[metra.ID])
-		memStor.mutter.RUnlock()
+		// get new value from memstorage
+		var gaaga gauge
+		if memStor.getGaugeValue(metra.ID, &gaaga) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		*metra.Value = float64(gaaga)
+
 		resp, err := json.Marshal(metra)
 		if err != nil {
 			http.Error(rwr, err.Error(), http.StatusInternalServerError)

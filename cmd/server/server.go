@@ -18,14 +18,13 @@ type MemStorage struct {
 	count  map[string]counter
 	mutter sync.RWMutex
 }
+
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
-
-const ContentType = "text/plain"
 
 var memStor MemStorage
 var host = "localhost:8080"
@@ -68,13 +67,13 @@ func run() error {
 }
 
 func badPost(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", ContentType)
+	rwr.Header().Set("Content-Type", "text/plain")
 	rwr.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 }
 
 func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", ContentType)
+	rwr.Header().Set("Content-Type", "text/plain")
 	if req.URL.Path != "/" { // if GET with wrong arguments structure
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
@@ -92,33 +91,36 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	}
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", ContentType)
+	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
-	val := "badly" // does not matter what initial value, could be "var val string"
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-	var err error
-
 	switch metricType {
 	case "counter":
-		err = memStor.getCounterValue(metricName, &val)
+		var cunt counter
+		if memStor.getCounterValue(metricName, &cunt) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		fmt.Fprint(rwr, cunt)
 	case "gauge":
-		err = memStor.getGaugeValue(metricName, &val)
+		var gaaga gauge
+		if memStor.getGaugeValue(metricName, &gaaga) != nil {
+			rwr.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(rwr, nil)
+			return
+		}
+		fmt.Fprint(rwr, gaaga)
 	default:
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(rwr, nil)
 		return
 	}
-	if err != nil {
-		rwr.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(rwr, nil)
-		return
-	}
-	fmt.Fprint(rwr, val)
 }
 
 func treatMetric(rwr http.ResponseWriter, req *http.Request) {
-	rwr.Header().Set("Content-Type", ContentType)
+	rwr.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(req)
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
@@ -153,4 +155,4 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
 
-// metricstest -test.v -test.run="^TestIteration6[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/
+// dir
