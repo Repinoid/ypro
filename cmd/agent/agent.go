@@ -75,11 +75,11 @@ func getMetrix(memStor *MemStorage) error {
 	return nil
 }
 func postMetric(metricType, metricName, metricValue string) error {
-	var metr Metrics
+	//	var metr Metrics
 	switch metricType {
 	case "counter":
 		val, _ := strconv.ParseInt(metricValue, 10, 64)
-		metr = Metrics{
+		metr := Metrics{
 			ID:    metricName,
 			MType: metricType,
 			Delta: &val,
@@ -92,7 +92,7 @@ func postMetric(metricType, metricName, metricValue string) error {
 		defer resp.Body.Close()
 	case "gauge":
 		val, _ := strconv.ParseFloat(metricValue, 64)
-		metr = Metrics{
+		metr := Metrics{
 			ID:    metricName,
 			MType: metricType,
 			Value: &val,
