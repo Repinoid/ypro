@@ -15,6 +15,12 @@ import (
 func Pointer[T any](v T) *T {
 	return &v
 }
+func Pint64(arg int64) *int64 {
+	return &arg
+}
+func Pfloat64(arg float64) *float64 {
+	return &arg
+}
 func Test_treatJSONMetric(t *testing.T) {
 
 	//v77 := 77.77
@@ -29,15 +35,41 @@ func Test_treatJSONMetric(t *testing.T) {
 		metr Metrics
 	}{
 		{
+			name: "Wrong type",
+			metr: Metrics{
+				MType: "gaug",
+				ID:    "Alloc",
+				Value: Pfloat64(77),
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				response:    `{"status":"StatusBadRequest"}`,
+				contentType: "application/json",
+			},
+		},
+		{
 			name: "Right gauge case",
 			metr: Metrics{
 				MType: "gauge",
 				ID:    "Alloc",
-				Value: Pointer(77.77),
+				Value: Pfloat64(77),
 			},
 			want: want{
 				code:        http.StatusOK,
-				response:    `{"id":"Alloc", "type":"gauge", "value":77.77}`,
+				response:    `{"id":"Alloc", "type":"gauge", "value":77}`,
+				contentType: "application/json",
+			},
+		},
+		{
+			name: "Right counter case",
+			metr: Metrics{
+				MType: "counter",
+				ID:    "Alloca",
+				Delta: Pint64(77),
+			},
+			want: want{
+				code:        http.StatusOK,
+				response:    `{"id":"Alloca", "type":"counter", "delta":77}`,
 				contentType: "application/json",
 			},
 		},
