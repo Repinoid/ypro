@@ -26,7 +26,7 @@ func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error, int) {
 		return nil, fmt.Errorf("erra http.NewRequest %w ", err), 0
 	}
 	fmt.Println("Header ", requerest.Header)
-	//	requerest.Header.Set("Content-Type", "application/json")
+	//     	requerest.Header.Set("Content-Type", "application/json")
 	requerest.Header.Set("Accept-Encoding", "gzip")
 	requerest.Header.Set("Content-Encoding", "gzip;zalupan")
 
