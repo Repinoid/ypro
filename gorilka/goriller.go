@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,8 +19,9 @@ func main() {
 	router.Headers("Content-Type", "application/json")
 
 	router.HandleFunc("/params", params).Methods("POST")
+	router.HandleFunc("/pure", pure).Methods("POST")
 
-	if err := http.ListenAndServe(localPort, router); err != nil {
+	if err := http.ListenAndServe(localPort, gzipHandle(router)); err != nil {
 		fmt.Println(err.Error())
 	}
 }
@@ -77,4 +79,61 @@ func params(rwr http.ResponseWriter, req *http.Request) {
 
 	rwr.Write(telo)
 
+}
+
+type gzipWriter struct {
+	http.ResponseWriter
+	Writer io.Writer
+}
+
+func (w gzipWriter) Write(b []byte) (int, error) {
+	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
+	return w.Writer.Write(b)
+}
+
+func gzipHandle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(respon http.ResponseWriter, claim *http.Request) {
+		rwr := respon
+		req := claim
+		if strings.Contains(claim.Header.Get("Accept-Encoding"), "gzip") {
+			gz, err := gzip.NewWriterLevel(respon, gzip.BestSpeed) // compressing
+			if err != nil {
+				io.WriteString(respon, err.Error())
+				return
+			}
+			defer gz.Close()
+			respon.Header().Set("Content-Encoding", "gzip") //
+			rwr = gzipWriter{ResponseWriter: respon, Writer: gz}
+		}
+		if strings.Contains(claim.Header.Get("Content-Encoding"), "gzip") {
+			gzipReader, err := gzip.NewReader(claim.Body) // decompressing
+			if err != nil {
+				io.WriteString(respon, err.Error())
+				return
+			}
+			newReq, err := http.NewRequest(claim.Method, claim.URL.String(), gzipReader)
+			if err != nil {
+				io.WriteString(respon, err.Error())
+				return
+			}
+			newReq.Header = claim.Header
+			req = newReq
+			//			req.Header.Set("Content-Encoding", "gzip")
+		}
+		next.ServeHTTP(rwr, req)
+		//	next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, newReq)
+	})
+}
+
+func pure(rwr http.ResponseWriter, req *http.Request) {
+	var reader io.Reader
+	var err error
+	reader = req.Body
+
+	telo, err := io.ReadAll(reader)
+	if err != nil {
+		http.Error(rwr, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rwr.Write(telo)
 }

@@ -28,7 +28,7 @@ func pack2gzip(data2pack []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
+func unpackFromGzip(data2unpack io.Reader) (io.Reader, error) {
 	gzipReader, err := gzip.NewReader(data2unpack)
 	if err != nil {
 		return nil, fmt.Errorf("gzip.NewReader %w ", err)
@@ -36,12 +36,7 @@ func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
 	if err := gzipReader.Close(); err != nil {
 		return nil, fmt.Errorf("zr.Close %w ", err)
 	}
-	decompressedData := make([]byte, 1000)
-	_, err = gzipReader.Read(decompressedData)
-	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("gzipReader.Read %w ", err)
-	}
-	return decompressedData, nil
+	return gzipReader, nil
 }
 
 func postJSONByNewRequest(jsonStr string) ([]byte, error) {
@@ -54,14 +49,13 @@ func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pack2gzip %w ", err)
 	}
-	requerest, err := http.NewRequest("POST", "http://"+host+"/params", bytes.NewBuffer(jsonStrPacked))
+	//requerest, err := http.NewRequest("POST", "http://"+host+"/pure", bytes.NewBuffer(jsonStrMarshalled))
+	requerest, err := http.NewRequest("POST", "http://"+host+"/pure", bytes.NewBuffer(jsonStrPacked))
 	if err != nil {
 		return nil, fmt.Errorf("erra http.NewRequest %w ", err)
 	}
-	//fmt.Println("Header ", requerest.Header)
-	//     	requerest.Header.Set("Content-Type", "application/json")
 	requerest.Header.Set("Accept-Encoding", "gzip")
-	requerest.Header.Set("Content-Encoding", "gzip")
+	requerest.Header.Set("Content-Encoding", "gzip") // mark that data encoded
 
 	client := &http.Client{}
 
@@ -71,28 +65,35 @@ func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 	}
 	defer responsa.Body.Close()
 
-	unpacked, err := unpackFromGzip(responsa.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unpackFromGzip %w ", err)
+	var reader io.Reader
+	if responsa.Header.Get(`Content-Encoding`) == `gzip` { // if response is encoded
+		reader, err = unpackFromGzip(responsa.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unpackFromGzip %w ", err)
+		}
+	} else {
+		reader = responsa.Body
 	}
-	return unpacked, nil
+	telo, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("io.ReadAll(reader) %w ", err)
+	}
+
+	return telo, nil
 }
 func main() {
 	metr := `{"a":7,"b":"1234a"}`
 	//	err := postByPost(metr)
 	outer, err := postJSONByNewRequest(metr)
 	if err != nil {
-		log.Fatalf("fatalled postmetric -->\n%v\n<---\n", err)
+		log.Fatalf("fatalled postmetric -->\n%v\t\t<---\n", err)
 	}
 	if err != nil && err != io.EOF {
 		fmt.Println("Ошибка чтения декомпрессированных данных:", err)
 		return
 	}
 
-	fmt.Printf("%v", string(outer))
-	// if _, err := io.Copy(os.Stdout, outer); err != nil {
-	// 	log.Fatal(err)
-	// }
+	fmt.Printf("telo - \t%v", string(outer))
 }
 
 func postByPost(metr string) error {
