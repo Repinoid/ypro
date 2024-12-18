@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -19,11 +18,24 @@ func main() {
 	router.Headers("Content-Type", "application/json")
 
 	router.HandleFunc("/params", params).Methods("POST")
-	//	router.HandleFunc("/", treat).Methods("POST")
 
 	if err := http.ListenAndServe(localPort, router); err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+func pack2gzip(data2pack []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.ModTime = time.Now()
+	_, err := zw.Write(data2pack)
+	if err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Close %w ", err)
+	}
+	return buf.Bytes(), nil
 }
 
 func params(rwr http.ResponseWriter, req *http.Request) {
@@ -34,40 +46,15 @@ func params(rwr http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	fmt.Printf("Accept-Encoding  %v\n", req.Header.Get("Accept-Encoding"))
-	fmt.Printf("Content-Encoding  %v\n", req.Header.Get("Content-Encoding"))
-	// hdr := req.Header
-	// fmt.Fprintf(rwr, "headers %[1]v type %[1]T\n", hdr)
-	// hst := req.Host
-	// fmt.Fprintf(rwr, "Host %30[1]v type %[1]T\n", hst)
-	// frm := req.Form
-	// fmt.Fprintf(rwr, "Form %30[1]v type %[1]T\n", frm)
-	// resp := req.Response
-	// fmt.Fprintf(rwr, "Response %30[1]v type %[1]T\n", resp)
-	// meth := req.Method
-	// fmt.Fprintf(rwr, "Method %30[1]v type %[1]T\n", meth)
-	// requ := req.RequestURI
-	// fmt.Fprintf(rwr, "RequestURI %30[1]v type %[1]T\n", requ)
-	// url := req.URL
-	// fmt.Fprintf(rwr, "URL %30[1]v type %[1]T\n", url)
-	// zippers := req.Header.Get("Accept-Encoding")
-	// fmt.Fprintf(rwr, "Zippers %30[1]v type %[1]T\n", zippers)
-	// fmt.Fprintf(rwr, "Compressed %[1]v type %[1]T\n", buf)
+	//fmt.Printf("Accept-Encoding  %v\n", req.Header.Get("Accept-Encoding"))
+	//fmt.Printf("Content-Encoding  %v\n", req.Header.Get("Content-Encoding"))
 
-	//	gzip.NewWriter(w io.Writer)
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.Name = "zw name"
-	zw.Comment = "zw comment"
-	zw.ModTime = time.Now()
-	_, err = zw.Write(telo)
+	compressed, err := pack2gzip(telo)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	if err := zw.Close(); err != nil {
-		log.Fatal(err)
-	}
-	rwr.Write(buf.Bytes())
+
+	rwr.Write(compressed)
 
 	//		fmt.Printf("Name: %s\nComment: %s\nModTime: %s\n\n", zr.Name, zr.Comment, zr.ModTime.UTC())
 

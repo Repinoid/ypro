@@ -9,59 +9,84 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	"time"
 	//"strings"
 )
 
 var host = "localhost:8080"
 
-func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error, int) {
+func pack2gzip(data2pack []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.ModTime = time.Now()
+	_, err := zw.Write(data2pack)
+	if err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Close %w ", err)
+	}
+	return buf.Bytes(), nil
+}
+func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
+	gzipReader, err := gzip.NewReader(data2unpack)
+	if err != nil {
+		return nil, fmt.Errorf("gzip.NewReader %w ", err)
+	}
+	if err := gzipReader.Close(); err != nil {
+		return nil, fmt.Errorf("zr.Close %w ", err)
+	}
+	decompressedData := make([]byte, 100)
+	_, err = gzipReader.Read(decompressedData)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("gzipReader.Read %w ", err)
+	}
+	return decompressedData, nil
+}
+
+func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error) {
 
 	jsonStrMarshalled, err := json.Marshal(jsonStr)
 	if err != nil {
-		return nil, fmt.Errorf("marshal err %w ", err), 0
+		return nil, fmt.Errorf("marshal err %w ", err)
 	}
+
 	requerest, err := http.NewRequest("POST", "http://"+host+"/params", bytes.NewBuffer(jsonStrMarshalled))
 	if err != nil {
-		return nil, fmt.Errorf("erra http.NewRequest %w ", err), 0
+		return nil, fmt.Errorf("erra http.NewRequest %w ", err)
 	}
 	fmt.Println("Header ", requerest.Header)
 	//     	requerest.Header.Set("Content-Type", "application/json")
 	requerest.Header.Set("Accept-Encoding", "gzip")
-	requerest.Header.Set("Content-Encoding", "gzip;zalupan")
+	requerest.Header.Set("Content-Encoding", "gzip")
 
 	client := &http.Client{}
 
 	responsa, err := client.Do(requerest)
 	if err != nil {
-		return nil, fmt.Errorf("client.Do  %w ", err), 0
+		return nil, fmt.Errorf("client.Do  %w ", err)
 	}
 	defer responsa.Body.Close()
 
-	dlina, errD := strconv.Atoi(responsa.Header.Get("Content-Length"))
-	if errD != nil {
-		return nil, fmt.Errorf("strconv.Atoi(responsa.Header.Get(\"Content-Length\")) %w ", errD), 0
-	}
-
 	gzipReader, err := gzip.NewReader(responsa.Body)
 	if err != nil {
-		return nil, fmt.Errorf("gzip.NewReader %w ", err), 0
+		return nil, fmt.Errorf("gzip.NewReader %w ", err)
 	}
 
 	if err := gzipReader.Close(); err != nil {
-		return nil, fmt.Errorf("zr.Close %w ", err), 0
+		return nil, fmt.Errorf("zr.Close %w ", err)
 	}
 
-	return gzipReader, nil, dlina
+	return gzipReader, nil
 }
 func main() {
 	metr := `{"a":7,"b":"1234a"}`
 	//	err := postByPost(metr)
-	outer, err, dlina := postJSONByNewRequest(metr)
+	outer, err := postJSONByNewRequest(metr)
 	if err != nil {
 		log.Fatalf("fatalled postmetric -->\n%v\n<---\n", err)
 	}
-	decompressedData := make([]byte, dlina)
+	decompressedData := make([]byte, 100)
 	_, err = outer.Read(decompressedData)
 	if err != nil && err != io.EOF {
 		fmt.Println("Ошибка чтения декомпрессированных данных:", err)
