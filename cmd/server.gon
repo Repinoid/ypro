@@ -23,7 +23,7 @@ var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
 
-func main() {
+func maina() {
 	if err := foa4Server(); err != nil {
 		log.Println(err, " no success for foa4Server() ")
 		return
