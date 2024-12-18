@@ -28,7 +28,7 @@ func pack2gzip(data2pack []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
+func unpackFromGzip(data2unpack io.ReadCloser) ([]byte, error) {
 	gzipReader, err := gzip.NewReader(data2unpack)
 	if err != nil {
 		return nil, fmt.Errorf("gzip.NewReader %w ", err)
@@ -44,18 +44,21 @@ func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
 	return decompressedData, nil
 }
 
-func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error) {
+func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 
 	jsonStrMarshalled, err := json.Marshal(jsonStr)
 	if err != nil {
 		return nil, fmt.Errorf("marshal err %w ", err)
 	}
-
-	requerest, err := http.NewRequest("POST", "http://"+host+"/params", bytes.NewBuffer(jsonStrMarshalled))
+	jsonStrPacked, err := pack2gzip(jsonStrMarshalled)
+	if err != nil {
+		return nil, fmt.Errorf("pack2gzip %w ", err)
+	}
+	requerest, err := http.NewRequest("POST", "http://"+host+"/params", bytes.NewBuffer(jsonStrPacked))
 	if err != nil {
 		return nil, fmt.Errorf("erra http.NewRequest %w ", err)
 	}
-	fmt.Println("Header ", requerest.Header)
+	//fmt.Println("Header ", requerest.Header)
 	//     	requerest.Header.Set("Content-Type", "application/json")
 	requerest.Header.Set("Accept-Encoding", "gzip")
 	requerest.Header.Set("Content-Encoding", "gzip")
@@ -68,16 +71,11 @@ func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error) {
 	}
 	defer responsa.Body.Close()
 
-	gzipReader, err := gzip.NewReader(responsa.Body)
+	unpacked, err := unpackFromGzip(responsa.Body)
 	if err != nil {
-		return nil, fmt.Errorf("gzip.NewReader %w ", err)
+		return nil, fmt.Errorf("unpackFromGzip %w ", err)
 	}
-
-	if err := gzipReader.Close(); err != nil {
-		return nil, fmt.Errorf("zr.Close %w ", err)
-	}
-
-	return gzipReader, nil
+	return unpacked, nil
 }
 func main() {
 	metr := `{"a":7,"b":"1234a"}`
@@ -86,14 +84,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("fatalled postmetric -->\n%v\n<---\n", err)
 	}
-	decompressedData := make([]byte, 100)
-	_, err = outer.Read(decompressedData)
 	if err != nil && err != io.EOF {
 		fmt.Println("Ошибка чтения декомпрессированных данных:", err)
 		return
 	}
 
-	fmt.Printf("%v", string(decompressedData))
+	fmt.Printf("%v", string(outer))
 	// if _, err := io.Copy(os.Stdout, outer); err != nil {
 	// 	log.Fatal(err)
 	// }
