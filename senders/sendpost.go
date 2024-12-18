@@ -28,7 +28,7 @@ func pack2gzip(data2pack []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-func unpackFromGzip(data2unpack io.ReadCloser) ([]byte, error) {
+func unpackFromGzip(data2unpack io.Reader) ([]byte, error) {
 	gzipReader, err := gzip.NewReader(data2unpack)
 	if err != nil {
 		return nil, fmt.Errorf("gzip.NewReader %w ", err)
@@ -36,7 +36,7 @@ func unpackFromGzip(data2unpack io.ReadCloser) ([]byte, error) {
 	if err := gzipReader.Close(); err != nil {
 		return nil, fmt.Errorf("zr.Close %w ", err)
 	}
-	decompressedData := make([]byte, 100)
+	decompressedData := make([]byte, 1000)
 	_, err = gzipReader.Read(decompressedData)
 	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("gzipReader.Read %w ", err)

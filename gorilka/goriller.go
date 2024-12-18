@@ -37,7 +37,7 @@ func pack2gzip(data2pack []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-func unpackFromGzip(data2unpack io.ReadCloser) ([]byte, error) {
+func unpackFromGzip(data2unpack io.Reader) (io.Reader, error) {
 	gzipReader, err := gzip.NewReader(data2unpack)
 	if err != nil {
 		return nil, fmt.Errorf("gzip.NewReader %w ", err)
@@ -45,24 +45,17 @@ func unpackFromGzip(data2unpack io.ReadCloser) ([]byte, error) {
 	if err := gzipReader.Close(); err != nil {
 		return nil, fmt.Errorf("zr.Close %w ", err)
 	}
-	decompressedData := make([]byte, 100)
-	_, err = gzipReader.Read(decompressedData)
-	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("gzipReader.Read %w ", err)
-	}
-	return decompressedData, nil
+	return gzipReader, nil
 }
 
 func params(rwr http.ResponseWriter, req *http.Request) {
 	var reader io.Reader
+	var err error
 	if req.Header.Get(`Content-Encoding`) == `gzip` {
-		gz, err := gzip.NewReader(req.Body)
+		reader, err = unpackFromGzip(req.Body)
 		if err != nil {
 			http.Error(rwr, err.Error(), http.StatusInternalServerError)
-			return
 		}
-		reader = gz
-		defer gz.Close()
 	} else {
 		reader = req.Body
 	}
@@ -72,14 +65,15 @@ func params(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//	if req.Header.Get(`Accept-Encoding`) == `gzip` {
-	rwr.Header().Set("Content-Encoding", "gzip")
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	_, _ = zw.Write(telo)
-	telo = buf.Bytes()
-	//	}
-	rwr.Header().Set("Content-Type", "application/javascript")
+	if req.Header.Get(`Accept-Encoding`) == `gzip` {
+		rwr.Header().Set("Content-Encoding", "gzip")
+		telo, err = pack2gzip(telo)
+	}
+	if err != nil {
+		http.Error(rwr, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	//rwr.Header().Set("Content-Type", "application/javascript")
 
 	rwr.Write(telo)
 
