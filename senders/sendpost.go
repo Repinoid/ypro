@@ -15,11 +15,6 @@ import (
 
 var host = "localhost:8080"
 
-// type decomp struct {
-// 	size int
-// 	head gzip.Header
-// }
-
 func postJSONByNewRequest(jsonStr string) (*gzip.Reader, error, int) {
 
 	jsonStrMarshalled, err := json.Marshal(jsonStr)
@@ -66,7 +61,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("fatalled postmetric -->\n%v\n<---\n", err)
 	}
-	//outer.
 	decompressedData := make([]byte, dlina)
 	_, err = outer.Read(decompressedData)
 	if err != nil && err != io.EOF {
