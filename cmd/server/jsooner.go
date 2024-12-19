@@ -9,6 +9,7 @@ import (
 
 func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	telo, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -65,6 +66,7 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 
 func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	telo, err := io.ReadAll(req.Body)
 	if err != nil {

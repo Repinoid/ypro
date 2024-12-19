@@ -116,6 +116,7 @@ func postByNewRequest(metr Metrics) ([]byte, error) {
 	}
 	requerest.Header.Set("Accept-Encoding", "gzip")
 	requerest.Header.Set("Content-Encoding", "gzip")
+	requerest.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 
