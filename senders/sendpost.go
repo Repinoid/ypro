@@ -50,7 +50,7 @@ func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 		return nil, fmt.Errorf("pack2gzip %w ", err)
 	}
 	//requerest, err := http.NewRequest("POST", "http://"+host+"/pure", bytes.NewBuffer(jsonStrMarshalled))
-	requerest, err := http.NewRequest("POST", "http://"+host+"/pure", bytes.NewBuffer(jsonStrPacked))
+	requerest, err := http.NewRequest("POST", "http://"+host+"/value/", bytes.NewBuffer(jsonStrPacked))
 	if err != nil {
 		return nil, fmt.Errorf("erra http.NewRequest %w ", err)
 	}
@@ -82,7 +82,7 @@ func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 	return telo, nil
 }
 func main() {
-	metr := `{"a":7,"b":"1234a"}`
+	metr := `{"type":"gauge","id":"Alloc"}`
 	//	err := postByPost(metr)
 	outer, err := postJSONByNewRequest(metr)
 	if err != nil {

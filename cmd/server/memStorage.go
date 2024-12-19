@@ -25,6 +25,7 @@ func (ms *MemStorage) getCounterValue(name string, value *counter) error {
 	defer ms.mutter.RUnlock()
 	if _, ok := ms.count[name]; ok {
 		*value = ms.count[name]
+
 		return nil
 	}
 	return fmt.Errorf("no %s key", name)

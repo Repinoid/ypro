@@ -155,4 +155,7 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
 
-// metricstest -test.v -test.run="^TestIteration8[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/ -agent-binary-path=cmd/agent/agent.exe -server-port=8080
+/*
+metricstest -test.v -test.run="^TestIteration8[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/ -agent-binary-path=cmd/agent/agent.exe -server-port=8080
+
+*/
