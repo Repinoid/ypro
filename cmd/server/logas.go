@@ -62,6 +62,7 @@ type gzipWriter struct {
 
 func (w gzipWriter) Write(b []byte) (int, error) {
 	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
+	//	return w.Writer.Write([]byte("zalup"))
 	return w.Writer.Write(b)
 }
 
@@ -72,8 +73,8 @@ func gzipHandle(next http.Handler) http.Handler {
 		if strings.Contains(claim.Header.Get("Accept-Encoding"), "gzip") &&
 			(strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
 				strings.Contains(claim.Header.Get("Content-Type"), "text/html")) {
-			//	respon.Header().Set("Content-Encoding", "gzip") //
-			claim.Header.Set("Content-Encoding", "gzip") // без этого в тестах -
+			respon.Header().Set("Content-Encoding", "gzip") //
+			//claim.Header.Set("Content-Encoding", "gzip")    // без этого в тестах -
 			// iteration8_test.go:326:
 			//     Error Trace:    y:\GO\ypro\iteration8_test.go:326
 			//                                             y:\GO\ypro\suite.go:91
@@ -81,16 +82,19 @@ func gzipHandle(next http.Handler) http.Handler {
 			//     Test:           TestIteration8/TestGetGzipHandlers/get_info_page
 			//     Messages:       Заголовок ответа Content-Encoding содержит несоответствующее значение
 
-			//									respon.Header().Set("Content-Type", "application/octet-stream") //
+			respon.Header().Set("Content-Type", "application/octet-stream") //
+			//	claim.Header.Set("Content-Type", "application/octet-stream")    //
 			//									req.Header.Set("Content-Type", "application/octet-stream")      //
 			//									respon.Header().Set("Content-Type", "application/json") //
 			//									req.Header.Set("Content-Type", "application/json")      //
-			gz, err := gzip.NewWriterLevel(respon, gzip.BestSpeed) // compressing
-			if err != nil {
-				io.WriteString(respon, err.Error())
-				return
-			}
+			//		gz, err := gzip.NewWriterLevel(respon, gzip.BestSpeed) // compressing
+			gz := gzip.NewWriter(respon) // compressing
+			// if err != nil {
+			// 	io.WriteString(respon, err.Error())
+			// 	return
+			// }
 			defer gz.Close()
+			//respon.Header().Set("Content-Encoding", "gzip")
 			rwr = gzipWriter{ResponseWriter: respon, Writer: gz}
 		}
 		if strings.Contains(claim.Header.Get("Content-Encoding"), "gzip") {
@@ -120,7 +124,6 @@ func gzipHandle(next http.Handler) http.Handler {
 			//newReq.Header.Set("Accept", "application/json")       //
 
 			req = newReq
-
 		}
 
 		next.ServeHTTP(rwr, req)
