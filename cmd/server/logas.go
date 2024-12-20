@@ -74,7 +74,7 @@ func gzipHandle(next http.Handler) http.Handler {
 			(strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
 				strings.Contains(claim.Header.Get("Content-Type"), "text/html")) {
 			respon.Header().Set("Content-Encoding", "gzip") //
-			//claim.Header.Set("Content-Encoding", "gzip")    // без этого в тестах -
+			req.Header.Set("Content-Encoding", "gzip")      // без этого в тестах -
 			// iteration8_test.go:326:
 			//     Error Trace:    y:\GO\ypro\iteration8_test.go:326
 			//                                             y:\GO\ypro\suite.go:91
@@ -82,7 +82,7 @@ func gzipHandle(next http.Handler) http.Handler {
 			//     Test:           TestIteration8/TestGetGzipHandlers/get_info_page
 			//     Messages:       Заголовок ответа Content-Encoding содержит несоответствующее значение
 
-			respon.Header().Set("Content-Type", "application/octet-stream") //
+			//	respon.Header().Set("Content-Type", "application/octet-stream") //
 			//	claim.Header.Set("Content-Type", "application/octet-stream")    //
 			//									req.Header.Set("Content-Type", "application/octet-stream")      //
 			//									respon.Header().Set("Content-Type", "application/json") //
