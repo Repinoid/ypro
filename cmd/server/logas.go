@@ -104,7 +104,7 @@ func gzipHandle(next http.Handler) http.Handler {
 			//			req.Header.Set("Content-Type", "application/json")      //
 			//			rwr.Header().Set("Content-Encoding", "")  --------------
 			//			req.Header.Set("Content-Encoding", "")   --------------
-			
+
 			gzipReader, err := gzip.NewReader(claim.Body) // decompressing
 			if err != nil {
 				io.WriteString(respon, err.Error())
@@ -120,6 +120,7 @@ func gzipHandle(next http.Handler) http.Handler {
 			//newReq.Header.Set("Accept", "application/json")       //
 
 			req = newReq
+
 		}
 
 		next.ServeHTTP(rwr, req)
