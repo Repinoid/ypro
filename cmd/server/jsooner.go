@@ -48,7 +48,7 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	err = json.Unmarshal([]byte(telo), &metra)
 	if err != nil {
 		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(rwr, "telesa %v", telo)
+		fmt.Fprintf(rwr, "%v", telo)
 		//	fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}

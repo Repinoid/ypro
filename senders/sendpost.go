@@ -54,7 +54,9 @@ func postJSONByNewRequest(jsonStr string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("erra http.NewRequest %w ", err)
 	}
-	requerest.Header.Set("Accept-Encoding", "gzip")
+	//requerest.Header.Set("Accept-Encoding", "gzip")
+	requerest.Header.Set("Content-Type", "application/json")
+
 	requerest.Header.Set("Content-Encoding", "gzip") // mark that data encoded
 
 	client := &http.Client{}
@@ -93,7 +95,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("telo - \t%v", string(outer))
+	fmt.Printf("telo - \t%s", string(outer))
 }
 
 func postByPost(metr string) error {
