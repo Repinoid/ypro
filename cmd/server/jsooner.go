@@ -35,21 +35,24 @@ func unpackFromGzip(data2unpack io.Reader) (io.Reader, error) {
 }
 
 func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
-	//rwr.Header().Set("Content-Type", "application/json")
+	rwr.Header().Set("Content-Type", "application/json")
 	//req.Header.Set("Content-Type", "application/json")
-
+	//rwr.WriteHeader(http.StatusBadRequest)
+	//return
 	telo, err := io.ReadAll(req.Body)
 	if err != nil {
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
-	metra := Metrics{}
+	//	inta := int64(0)
+	//	floata := float64(0)
+	metra := Metrics{} //Delta: &inta, Value: &floata}
 	err = json.Unmarshal([]byte(telo), &metra)
 	if err != nil {
 		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(rwr, "%v", telo)
-		//	fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
+		//	fmt.Fprintf(rwr, "%v", telo)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
 	switch metra.MType {
@@ -58,38 +61,48 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 		if memStor.getCounterValue(metra.ID, &cunt) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, `{"status":"StatusNotFound"}`)
+			//			json.NewEncoder(rwr).Encode(metra)
 			return
 		}
 		delt := int64(cunt)
 		metra.Delta = &delt
-		resp, err := json.Marshal(metra)
-		if err != nil {
-			http.Error(rwr, err.Error(), http.StatusInternalServerError)
-			fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
-			return
-		}
-		rwr.Write(resp)
+
+	//	json.NewEncoder(rwr).Encode(metra)
+	//	return
+
+	// resp, err := json.Marshal(metra)
+	// if err != nil {
+	// 	http.Error(rwr, err.Error(), http.StatusInternalServerError)
+	// 	fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
+	// 	return
+	// }
+	// rwr.Write(resp)
 	case "gauge":
 		var gaaga gauge
 		if memStor.getGaugeValue(metra.ID, &gaaga) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, `{"status":"StatusNotFound"}`)
+			//			break
 			return
 		}
 		flo := float64(gaaga)
 		metra.Value = &flo
-		resp, err := json.Marshal(metra)
-		if err != nil {
-			http.Error(rwr, err.Error(), http.StatusInternalServerError)
-			fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
-			return
-		}
-		rwr.Write(resp)
+
+	//	json.NewEncoder(rwr).Encode(metra)
+
+	// resp, err := json.Marshal(metra)
+	// if err != nil {
+	// 	http.Error(rwr, err.Error(), http.StatusInternalServerError)
+	// 	fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
+	// 	return
+	// }
+	// rwr.Write(resp)
 	default:
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
+	json.NewEncoder(rwr).Encode(metra) // common
 }
 
 func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {

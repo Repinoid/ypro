@@ -71,13 +71,15 @@ func gzipHandle(next http.Handler) http.Handler {
 		if strings.Contains(claim.Header.Get("Accept-Encoding"), "gzip") &&
 			(strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
 				strings.Contains(claim.Header.Get("Content-Type"), "text/html")) {
-			respon.Header().Add("Content-Encoding", "gzip")                 //
-			req.Header.Add("Content-Encoding", "gzip")                      // без этого в тестах -
-			req.Header.Add("Content-Type", "application/octet-stream")      // без этого в тестах -
-			respon.Header().Add("Content-Type", "application/octet-stream") // без этого в тестах -
+			respon.Header().Set("Content-Encoding", "gzip")                 //
+			req.Header.Set("Content-Encoding", "gzip")                      // без этого в тестах -
+			req.Header.Set("Content-Type", "application/octet-stream")      // без этого в тестах -
+			respon.Header().Set("Content-Type", "application/octet-stream") // без этого в тестах -
 			gz := gzip.NewWriter(respon)                                    // compressing
 			defer gz.Close()
 			rwr = gzipWriter{ResponseWriter: respon, Writer: gz}
+			next.ServeHTTP(rwr, req)
+			return
 		}
 		if strings.Contains(claim.Header.Get("Content-Encoding"), "gzip") {
 			respon.Header().Set("Content-Type", "application/json") // без этого в тестах -

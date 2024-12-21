@@ -20,31 +20,30 @@ func main() {
 	httpc := resty.New() //
 	httpc.SetBaseURL("http://localhost:8080")
 	req := httpc.R().
-		SetHeader("Accept-Encoding", "gzip").
+		//	SetHeader("Accept-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json")
 	var result Metrics
-	//	f64 := float64(55)
-	resp, err := req.
+	//f64 := float64(55)
+	resp, err0 := req.
 		SetBody(&Metrics{
-			ID:    "namer",
+			ID:    "Alloc",
 			MType: "gauge",
-			//			Value: &f64,
+			//Value: &f64,
 		}).
-		//		SetResult(&result).
-		Post("/value/")
-	req.SetResult(&result)
+		SetResult(&result).
+		Post("value/")
 
 	umjs := Metrics{}
-	if err != nil {
-		log.Print("gggg")
+	if err0 != nil {
+		log.Print(err0)
 	}
 	log.Print("aaa")
 
 	bod := resp.Body()
-	err = json.Unmarshal(bod, &umjs)
+	_ = json.Unmarshal(bod, &umjs)
 	//	telo, err := io.ReadAll(resp.Body)
 
-	fmt.Printf("%v\n%v\n%v\n", resp.StatusCode(), string(bod), err)
+	fmt.Printf("%v\n%v\n%v\n", resp.StatusCode(), result, err0)
 
 	// js := Metrics{MType: "gauge", ID: "Alloc"}
 
