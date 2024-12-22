@@ -125,6 +125,7 @@ func postByNewRequest(metr Metrics) ([]byte, error) {
 		return nil, fmt.Errorf("client.Do  %w ", err)
 	}
 	defer responsa.Body.Close()
+	
 	var reader io.Reader
 	if responsa.Header.Get(`Content-Encoding`) == `gzip` {
 		reader, err = unpackFromGzip(responsa.Body)
