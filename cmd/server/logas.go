@@ -68,13 +68,21 @@ func gzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(respon http.ResponseWriter, claim *http.Request) {
 		rwr := respon
 		req := claim
-		if strings.Contains(claim.Header.Get("Accept-Encoding"), "gzip") &&
-			(strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
-				strings.Contains(claim.Header.Get("Content-Type"), "text/html")) {
+		isTypeOK := strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
+			strings.Contains(claim.Header.Get("Content-Type"), "text/html") ||
+			strings.Contains(claim.Header.Get("Accept"), "application/json") ||
+			strings.Contains(claim.Header.Get("Accept"), "text/html")
+
+		if strings.Contains(claim.Header.Get("Accept-Encoding"), "gzip") && isTypeOK {
+			//			(strings.Contains(claim.Header.Get("Content-Type"), "application/json") ||
+			//				strings.Contains(claim.Header.Get("Content-Type"), "text/html"))
+			//				{
 			respon.Header().Set("Content-Encoding", "gzip") //
+
 			//			req.Header.Set("Content-Encoding", "gzip")                      // без этого в тестах -
 			//			req.Header.Set("Content-Type", "application/octet-stream")      // без этого в тестах -
 			//respon.Header().Set("Content-Type", "application/octet-stream") // без этого в тестах -
+
 			gz := gzip.NewWriter(respon) // compressing
 			defer gz.Close()
 			rwr = gzipWriter{ResponseWriter: respon, Writer: gz}
@@ -84,6 +92,7 @@ func gzipHandle(next http.Handler) http.Handler {
 		if strings.Contains(claim.Header.Get("Content-Encoding"), "gzip") {
 			respon.Header().Set("Content-Type", "application/json") // без этого в тестах -
 			req.Header.Del("Content-Encoding")
+
 			//			respon.Header().Set("Content-Encoding", "gzip") //
 			//			req.Header.Set("Content-Encoding", "gzip")      // без этого в тестах -
 
