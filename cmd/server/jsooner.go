@@ -144,13 +144,14 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		*metra.Delta = int64(cunt)
+		json.NewEncoder(rwr).Encode(metra)
 
-		resp, err := json.Marshal(metra)
-		if err != nil {
-			http.Error(rwr, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		rwr.Write(resp)
+		// resp, err := json.Marshal(metra)
+		// if err != nil {
+		// 	http.Error(rwr, err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
+		// rwr.Write(resp)
 	case "gauge":
 		if metricValue == nil {
 			rwr.WriteHeader(http.StatusBadRequest)
@@ -166,13 +167,14 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		*metra.Value = float64(gaaga)
+		json.NewEncoder(rwr).Encode(metra)
 
-		resp, err := json.Marshal(metra)
-		if err != nil {
-			http.Error(rwr, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		rwr.Write(resp)
+		// resp, err := json.Marshal(metra)
+		// if err != nil {
+		// 	http.Error(rwr, err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
+		// rwr.Write(resp)
 	default:
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
