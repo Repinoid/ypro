@@ -13,6 +13,7 @@ type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 }
 
+func main1() {
 func main2() {
 
 	httpc := resty.New() //
