@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,19 +32,19 @@ var memStor MemStorage
 var fnam = "ms.txt"
 
 func (memorial *MemStorage) MarshalMS() ([]byte, error) {
+	buf := new(bytes.Buffer)
 	memorial.mutter.RLock()
-	ret, err := json.Marshal(MStorJSON{
+	err := json.NewEncoder(buf).Encode(MStorJSON{
 		Gau:   memorial.gau,
 		Count: memorial.count,
 	})
 	memorial.mutter.RUnlock()
-	ret = append(ret, '\n')
-	return ret, err
+	return append(buf.Bytes(), '\n'), err
 }
 func (memorial *MemStorage) UnmarshalMS(data []byte) error {
-	memorial.mutter.Lock()
 	ms := MStorJSON{}
-	err := json.Unmarshal(data, &ms)
+	memorial.mutter.Lock()
+	err := json.NewDecoder(bytes.NewBuffer(data)).Decode(&ms)
 	memorial.gau = ms.Gau
 	memorial.count = ms.Count
 	memorial.mutter.Unlock()
@@ -85,9 +86,10 @@ func (memorial *MemStorage) LoadMS(fnam string) error {
 
 func main() {
 
-	g := map[string]gauge{"gs1": gauge(77.77), "gs2": gauge(88.88)}
+	g := map[string]gauge{"gs1": gauge(99.77), "gs2": gauge(88.88)}
 	c := map[string]counter{"cs1": counter(44), "cs2": counter(88)}
 	memStor = MemStorage{gau: g, count: c}
+	//memStor = MemStorage{}
 
 	err := memStor.LoadMS(fnam)
 	fmt.Println(err)
@@ -96,6 +98,6 @@ func main() {
 	// se := MemStorage{}
 	// se.UnmarshalMS(ma)
 
-	fmt.Printf(" %v %v",  memStor.count, memStor.gau)
+	fmt.Printf(" %v %v", memStor.count, memStor.gau)
 
 }
