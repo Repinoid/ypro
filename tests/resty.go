@@ -13,7 +13,7 @@ type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 }
 
-func main() {
+func main2() {
 
 	httpc := resty.New() //
 	httpc.SetBaseURL("http://localhost:8080")
