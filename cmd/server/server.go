@@ -1,3 +1,7 @@
+/*
+metricstest -test.v -test.run="^TestIteration8[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/  -agent-binary-path=cmd/agent/agent.exe -server-port=localhost:8080
+*/
+
 package main
 
 import (
@@ -6,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -30,6 +35,17 @@ var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
 
+func saver(memStor *MemStorage, fnam string) error {
+
+	for {
+		time.Sleep(time.Duration(1) * time.Second)
+		err := memStor.SaveMS(fnam)
+		if err != nil {
+			return fmt.Errorf("save err %v", err)
+		}
+	}
+}
+
 func main() {
 	if err := foa4Server(); err != nil {
 		log.Println(err, " no success for foa4Server() ")
@@ -41,9 +57,16 @@ func main() {
 		count: make(map[string]counter),
 	}
 
+	if reStore {
+		_ = memStor.LoadMS(fileStorePath)
+	}
+
+	go saver(&memStor, fileStorePath)
+
 	if err := run(); err != nil {
 		panic(err)
 	}
+
 }
 
 func run() error {
@@ -64,6 +87,8 @@ func run() error {
 	sugar = *logger.Sugar()
 
 	//return http.ListenAndServe(host, router)
+	log.Printf("host %v ", host)
+
 	return http.ListenAndServe(host, gzipHandle(router))
 }
 
@@ -156,4 +181,3 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }
 
-// metricstest -test.v -test.run="^TestIteration6[AB]*$" -binary-path=cmd/server/server.exe -source-path=cmd/server/

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func main() {
+func main4() {
 	r := strings.NewReader("some io.Reader stream to be read\t")
 	buf := []byte("                                                              ")
 	//	tee := io.Reader(&buf)

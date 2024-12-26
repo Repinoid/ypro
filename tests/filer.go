@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand/v2"
 	"os"
 	"sync"
+	"time"
 )
 
 type gauge float64
@@ -84,15 +86,33 @@ func (memorial *MemStorage) LoadMS(fnam string) error {
 	return nil
 }
 
+func saver(memStor *MemStorage, fnam string) error {
+
+	for {
+		time.Sleep(time.Duration(1) * time.Second)
+		err := memStor.SaveMS(fnam)
+		if err != nil {
+			return fmt.Errorf("save err %v", err)
+		}
+	}
+	//return nil
+
+}
+
 func main() {
 
 	g := map[string]gauge{"gs1": gauge(99.77), "gs2": gauge(88.88)}
-	c := map[string]counter{"cs1": counter(44), "cs2": counter(88)}
+	c := map[string]counter{"cs1": counter(rand.IntN(100)), "cs2": counter(rand.IntN(100))}
 	memStor = MemStorage{gau: g, count: c}
 	//memStor = MemStorage{}
 
 	err := memStor.LoadMS(fnam)
 	fmt.Println(err)
+
+	go saver(&memStor, "out.out")
+
+	var inp string
+	fmt.Scan(&inp)
 
 	// ma, _ := memStor.MarshalMS()
 	// se := MemStorage{}
