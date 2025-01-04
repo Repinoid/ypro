@@ -5,7 +5,6 @@ metricstest -test.v -test.run="^TestIteration8[AB]*$" -binary-path=cmd/server/se
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,8 +14,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type gauge float64
@@ -83,7 +80,6 @@ func run() error {
 	router.HandleFunc("/value/", WithLogging(getJSONMetric)).Methods("POST")
 	router.HandleFunc("/", WithLogging(getAllMetrix)).Methods("GET")
 	router.HandleFunc("/", WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
-	router.HandleFunc("/ping", WithLogging(dbPinger)).Methods("GET")
 
 	router.Use(gzipHandleEncoder)
 	router.Use(gzipHandleDecoder)
@@ -111,6 +107,7 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
+	rwr.WriteHeader(http.StatusOK)
 	memStor.mutter.RLock() // <---- MUTEX
 	defer memStor.mutter.RUnlock()
 	for nam, val := range memStor.gau {
@@ -120,7 +117,6 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 	for nam, val := range memStor.count {
 		fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
 	}
-	rwr.WriteHeader(http.StatusOK)
 }
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/html")
@@ -191,26 +187,4 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 	if storeInterval == 0 {
 		_ = memStor.SaveMS(fileStorePath)
 	}
-}
-
-func dbPinger(rwr http.ResponseWriter, req *http.Request) {
-
-	db, err := sql.Open("pgx", dbEndPoint)
-
-	if err != nil {
-		fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
-		rwr.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer db.Close()
-
-	perr := db.Ping()
-	if perr != nil {
-		fmt.Fprintf(rwr, `{"status":"StatusInternalServerError"}`)
-		rwr.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
-	rwr.WriteHeader(http.StatusOK)
-
 }
