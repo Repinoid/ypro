@@ -9,24 +9,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func pack2gzip(data2pack []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.ModTime = time.Now()
-	_, err := zw.Write(data2pack)
-	if err != nil {
-		return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)
-	}
-	if err := zw.Close(); err != nil {
-		return nil, fmt.Errorf("gzip.NewWriter.Close %w ", err)
-	}
-	return buf.Bytes(), nil
-}
+type func4test func(http.ResponseWriter, *http.Request)
+
+//	func pack2gzip(data2pack []byte) ([]byte, error) {
+//		var buf bytes.Buffer
+//		zw := gzip.NewWriter(&buf)
+//		zw.ModTime = time.Now()
+//		_, err := zw.Write(data2pack)
+//		if err != nil {
+//			return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)
+//		}
+//		if err := zw.Close(); err != nil {
+//			return nil, fmt.Errorf("gzip.NewWriter.Close %w ", err)
+//		}
+//		return buf.Bytes(), nil
+//	}
 func unpackFromGzip(data2unpack io.Reader) (io.Reader, error) {
 	gzipReader, err := gzip.NewReader(data2unpack)
 	if err != nil {
@@ -51,12 +52,30 @@ func Test_gzipHandlePLUG(t *testing.T) {
 		ContentType     string
 		want            want
 		metr            Metrics
+		function        func4test
 	}{
 		{
-			name:            "AcceptEncoding:  \"gzip\"",
+			name:            "THECAP AcceptEncoding:  \"gzip\"",
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
+			function:        thecap,
+			metr: Metrics{
+				MType: "gauge",
+				ID:    "Alloc",
+				Value: Pfloat64(77),
+			},
+			want: want{
+				code:     http.StatusOK,
+				response: `{"status":"StatusBadRequest"}`,
+			},
+		},
+		{
+			name:            "treatJSONMetric AcceptEncoding:  \"gzip\"",
+			AcceptEncoding:  "gzip",
+			ContentEncoding: "",
+			ContentType:     "application/json",
+			function:        treatJSONMetric,
 			metr: Metrics{
 				MType: "gauge",
 				ID:    "Alloc",
@@ -71,7 +90,8 @@ func Test_gzipHandlePLUG(t *testing.T) {
 			AcceptEncoding:  "",
 			ContentEncoding: "gzip",
 			//ContentType:     "application/json",
-			name: "No encoding",
+			name:     "No encoding",
+			function: thecap,
 			metr: Metrics{
 				MType: "gauge",
 				ID:    "Alloc",
@@ -83,7 +103,10 @@ func Test_gzipHandlePLUG(t *testing.T) {
 			},
 		},
 	}
-
+	memStor = MemStorage{
+		gau:   make(map[string]gauge),
+		count: make(map[string]counter),
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			march, _ := json.Marshal(tt.metr)
@@ -98,11 +121,14 @@ func Test_gzipHandlePLUG(t *testing.T) {
 			request.Header.Set("Content-Encoding", tt.ContentEncoding)
 			request.Header.Set("Content-Type", tt.ContentType)
 
-			hfunc := http.HandlerFunc(thecap)
+			fu := tt.function
+			hfunc := http.HandlerFunc(fu)
+			//			hfunc := http.HandlerFunc(thecap)
 			hh := gzipHandleEncoder(hfunc)
 			hh.ServeHTTP(w, request)
 
 			res := w.Body
+			var telo, ma []byte
 
 			if tt.AcceptEncoding == "gzip" {
 				//		if tt.ContentEncoding == "gzip" {
@@ -110,16 +136,13 @@ func Test_gzipHandlePLUG(t *testing.T) {
 				if err != nil {
 					fmt.Println(err)
 				}
-				telo, _ := io.ReadAll(u)
-				ma, _ := json.Marshal(tt.metr)
-				assert.JSONEq(t, string(ma), string(telo))
+				telo, _ = io.ReadAll(u)
 			}
 			if tt.ContentEncoding == "gzip" {
-				telo, _ := io.ReadAll(res)
-				ma, _ := json.Marshal(tt.metr)
-				assert.JSONEq(t, string(ma), string(telo))
-				//	assert.Equal(t, tt.want.response, res.)
+				telo, _ = io.ReadAll(res)
 			}
+			ma, _ = json.Marshal(tt.metr)
+			assert.JSONEq(t, string(ma), string(telo))
 
 		})
 	}

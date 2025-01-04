@@ -78,14 +78,20 @@ func postMetric(metricType, metricName, metricValue string) error {
 	var metr Metrics
 	switch metricType {
 	case "counter":
-		val, _ := strconv.ParseInt(metricValue, 10, 64)
+		val, err := strconv.ParseInt(metricValue, 10, 64)
+		if err != nil {
+			return fmt.Errorf("wrong counter value %w", err)
+		}
 		metr = Metrics{
 			ID:    metricName,
 			MType: metricType,
 			Delta: &val,
 		}
 	case "gauge":
-		val, _ := strconv.ParseFloat(metricValue, 64)
+		val, err := strconv.ParseFloat(metricValue, 64)
+		if err != nil {
+			return fmt.Errorf("wrong gauge value %w", err)
+		}
 		metr = Metrics{
 			ID:    metricName,
 			MType: metricType,
@@ -94,10 +100,13 @@ func postMetric(metricType, metricName, metricValue string) error {
 	default:
 		return fmt.Errorf("wrong metric type")
 	}
-	march, _ := json.Marshal(metr)
+	march, err := json.Marshal(metr)
+	if err != nil {
+		return fmt.Errorf("could not marshal metr %w", err)
+	}
 	resp, err := http.Post("http://"+host+"/update/", "application/json", bytes.NewBuffer(march))
 	if err != nil {
-		return err
+		return fmt.Errorf("could not post %w", err)
 	}
 	defer resp.Body.Close()
 
