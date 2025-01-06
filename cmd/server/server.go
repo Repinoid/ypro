@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"internal/dbaser"
+	"internal/middles"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -115,17 +116,17 @@ func main() {
 func run() error {
 
 	router := mux.NewRouter()
-	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", WithLogging(treatMetric)).Methods("POST")
-	router.HandleFunc("/update/", WithLogging(treatJSONMetric)).Methods("POST")
-	router.HandleFunc("/value/{metricType}/{metricName}", WithLogging(getMetric)).Methods("GET")
-	router.HandleFunc("/value/", WithLogging(getJSONMetric)).Methods("POST")
-	router.HandleFunc("/", WithLogging(getAllMetrix)).Methods("GET")
-	router.HandleFunc("/", WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
+	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", middles.WithLogging(treatMetric)).Methods("POST")
+	router.HandleFunc("/update/", middles.WithLogging(treatJSONMetric)).Methods("POST")
+	router.HandleFunc("/value/{metricType}/{metricName}", middles.WithLogging(getMetric)).Methods("GET")
+	router.HandleFunc("/value/", middles.WithLogging(getJSONMetric)).Methods("POST")
+	router.HandleFunc("/", middles.WithLogging(getAllMetrix)).Methods("GET")
+	router.HandleFunc("/", middles.WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
 	//	router.HandleFunc("/ping", WithLogging(dbPinger)).Methods("GET")
 	router.HandleFunc("/ping", dbPinger).Methods("GET")
 
-	router.Use(gzipHandleEncoder)
-	router.Use(gzipHandleDecoder)
+	router.Use(middles.GzipHandleEncoder)
+	router.Use(middles.GzipHandleDecoder)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
