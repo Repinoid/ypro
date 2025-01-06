@@ -14,7 +14,7 @@ import (
 
 func (memorial *MemStorage) addGauge(name string, value gauge) error {
 	if isBase {
-		err := dbaser.TablePutGauge(context.Background(), MetricBase.MetricBase, name, float64(value))
+		err := dbaser.TablePutGauge(context.Background(), MetricBaseStruct.MetricBase, name, float64(value))
 		if err != nil {
 			//	log.Printf("from memstorage %v\nisBase - %v\ncheck - %v\n\n\n", MetricBase.MetricBase, isBase, check)
 			sugar.Errorf("err", err)
@@ -27,7 +27,7 @@ func (memorial *MemStorage) addGauge(name string, value gauge) error {
 }
 func (memorial *MemStorage) addCounter(name string, value counter) error {
 	if isBase {
-		err := dbaser.TablePutCounter(context.Background(), MetricBase.MetricBase, name, int64(value))
+		err := dbaser.TablePutCounter(context.Background(), MetricBaseStruct.MetricBase, name, int64(value))
 		if err != nil {
 			sugar.Errorf("err", err)
 		}
@@ -43,7 +43,7 @@ func (memorial *MemStorage) addCounter(name string, value counter) error {
 }
 func (memorial *MemStorage) getCounterValue(name string, value *counter) error {
 	if isBase {
-		cunt, err := dbaser.TableGetCounter(context.Background(), MetricBase.MetricBase, name)
+		cunt, err := dbaser.TableGetCounter(context.Background(), MetricBaseStruct.MetricBase, name)
 		if err == nil {
 			*value = counter(cunt)
 			return nil
@@ -60,7 +60,7 @@ func (memorial *MemStorage) getCounterValue(name string, value *counter) error {
 }
 func (memorial *MemStorage) getGaugeValue(name string, value *gauge) error {
 	if isBase {
-		gaval, err := dbaser.TableGetGauge(context.Background(), MetricBase.MetricBase, name)
+		gaval, err := dbaser.TableGetGauge(context.Background(), MetricBaseStruct.MetricBase, name)
 		if err == nil {
 			*value = gauge(gaval)
 			return nil
