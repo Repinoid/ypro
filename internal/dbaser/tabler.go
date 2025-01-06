@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	//	"log"
+
 	"github.com/jackc/pgx/v5"
 )
 
 func TableCreation(ctx context.Context, db *pgx.Conn) error {
+
+	//log.Printf("TABLE CREATION %v\n", db)
+
 	crea := "CREATE TABLE IF NOT EXISTS Gauge(metricname VARCHAR(30) PRIMARY KEY, value FLOAT8);"
 	tag, err := db.Exec(ctx, crea)
 	if err != nil {
@@ -25,11 +30,14 @@ func TablePutGauge(ctx context.Context, db *pgx.Conn, mname string, value float6
 
 	order := fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]f);", mname, value)
 	tag1, err := db.Exec(ctx, order)
+
+	//	log.Printf("TableInsertGauge err %v\n db %v\n\n", err, db)
 	if err == nil {
 		return nil
 	}
 	order = fmt.Sprintf("UPDATE Gauge SET value=%[2]f WHERE metricname='%[1]s'", mname, value)
 	tag2, err := db.Exec(ctx, order)
+	//	log.Printf("TableUpdateGauge err %v\n db %v\n\n", err, db)
 	if err == nil {
 		return nil
 	}
