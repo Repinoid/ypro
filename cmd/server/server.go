@@ -13,9 +13,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"internal/dbaser"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -42,6 +45,7 @@ type Metrics struct {
 var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
+var isBase = true
 
 func saver(memStor *MemStorage, fnam string) error {
 
@@ -71,6 +75,18 @@ func main() {
 
 	if storeInterval > 0 {
 		go saver(&memStor, fileStorePath)
+	}
+
+	ctx := context.Background()
+	db, err := pgx.Connect(ctx, dbEndPoint)
+	if err != nil {
+		isBase = false
+		log.Printf("Can't connect to DB %s\n", dbEndPoint)
+	} else {
+		err = dbaser.TableCreation(ctx, db)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to create tables: %v\n", err)
+		}
 	}
 
 	if err := run(); err != nil {
