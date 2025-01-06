@@ -3,18 +3,32 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"internal/dbaser"
 	"os"
 )
 
 func (memorial *MemStorage) addGauge(name string, value gauge) error {
+	if isBase {
+		err := dbaser.TablePutGauge(context.Background(), MetricBase, name, float64(value))
+		if err != nil {
+			sugar.Errorf("err", err)
+		}
+	}
 	memorial.mutter.Lock()
 	defer memorial.mutter.Unlock()
 	memorial.gau[name] = value
 	return nil
 }
 func (memorial *MemStorage) addCounter(name string, value counter) error {
+	if isBase {
+		err := dbaser.TablePutCounter(context.Background(), MetricBase, name, int64(value))
+		if err != nil {
+			sugar.Errorf("err", err)
+		}
+	}
 	memorial.mutter.Lock()
 	defer memorial.mutter.Unlock()
 	if _, ok := memorial.count[name]; ok {
@@ -25,6 +39,14 @@ func (memorial *MemStorage) addCounter(name string, value counter) error {
 	return nil
 }
 func (memorial *MemStorage) getCounterValue(name string, value *counter) error {
+	if isBase {
+		cunt, err := dbaser.TableGetCounter(context.Background(), MetricBase, name)
+		if err == nil {
+			*value = counter(cunt)
+			return nil
+		}
+		sugar.Errorf("err", err)
+	}
 	memorial.mutter.RLock() // <---- MUTEX
 	defer memorial.mutter.RUnlock()
 	if _, ok := memorial.count[name]; ok {
@@ -34,6 +56,14 @@ func (memorial *MemStorage) getCounterValue(name string, value *counter) error {
 	return fmt.Errorf("no %s key", name)
 }
 func (memorial *MemStorage) getGaugeValue(name string, value *gauge) error {
+	if isBase {
+		gaval, err := dbaser.TableGetGauge(context.Background(), MetricBase, name)
+		if err == nil {
+			*value = gauge(gaval)
+			return nil
+		}
+		sugar.Errorf("err", err)
+	}
 	memorial.mutter.RLock() // <---- MUTEX
 	defer memorial.mutter.RUnlock()
 	if _, ok := memorial.gau[name]; ok {

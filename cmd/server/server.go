@@ -46,6 +46,7 @@ var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
 var isBase = true
+var MetricBase *pgx.Conn
 
 func saver(memStor *MemStorage, fnam string) error {
 
@@ -78,12 +79,12 @@ func main() {
 	}
 
 	ctx := context.Background()
-	db, err := pgx.Connect(ctx, dbEndPoint)
+	MetricBase, err := pgx.Connect(ctx, dbEndPoint)
 	if err != nil {
 		isBase = false
 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
 	} else {
-		err = dbaser.TableCreation(ctx, db)
+		err = dbaser.TableCreation(ctx, MetricBase)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to create tables: %v\n", err)
 		}
