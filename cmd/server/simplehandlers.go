@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"internal/dbaser"
+	"internal/memo"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -21,13 +24,33 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
-	memStor.mutter.RLock() // <---- MUTEX
-	defer memStor.mutter.RUnlock()
-	for nam, val := range memStor.gau {
+	if MetricBaseStruct.IsBase {
+		mGauge, err := dbaser.TableGetAllGauges(MetricBaseStruct.Ctx, MetricBaseStruct.MetricBase)
+		if err != nil {
+			log.Printf("bad allgauges\n %v\n", err)
+		}
+		mCounter, err := dbaser.TableGetAllCounters(MetricBaseStruct.Ctx, MetricBaseStruct.MetricBase)
+		if err != nil {
+			log.Printf("bad allcounters\n %v\n", err)
+		}
+		for nam, val := range mGauge {
+			flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
+			fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
+		}
+		for nam, val := range mCounter {
+			fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
+		}
+		rwr.WriteHeader(http.StatusOK)
+		return
+	}
+
+	memStor.Mutter.RLock() // <---- MUTEX
+	defer memStor.Mutter.RUnlock()
+	for nam, val := range memStor.Gaugemetr {
 		flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
 		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
 	}
-	for nam, val := range memStor.count {
+	for nam, val := range memStor.Countmetr {
 		fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
 	}
 	rwr.WriteHeader(http.StatusOK)
@@ -40,7 +63,8 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	switch metricType {
 	case "counter":
 		var cunt counter
-		if memStor.getCounterValue(metricName, &cunt) != nil {
+		if memo.GetCounterValue(&memStor, MetricBaseStruct, metricName, &cunt) != nil {
+			//	if memStor.GetCounterValue(metricName, &cunt) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -48,7 +72,8 @@ func getMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(rwr, cunt)
 	case "gauge":
 		var gaaga gauge
-		if memStor.getGaugeValue(metricName, &gaaga) != nil {
+		if memo.GetGaugeValue(&memStor, MetricBaseStruct, metricName, &gaaga) != nil {
+			//	if memStor.GetGaugeValue(metricName, &gaaga) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -84,7 +109,8 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
-		memStor.addCounter(metricName, counter(value))
+		//	memStor.AddCounter(metricName, counter(value))
+		memo.AddCounter(&memStor, MetricBaseStruct, metricName, counter(value))
 	case "gauge":
 		value, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
@@ -92,7 +118,8 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
-		memStor.addGauge(metricName, gauge(value))
+		//	memStor.AddGauge(metricName, gauge(value))
+		memo.AddGauge(&memStor, MetricBaseStruct, metricName, gauge(value))
 	default:
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)

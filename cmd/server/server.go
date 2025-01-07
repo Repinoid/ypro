@@ -16,27 +16,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"sync"
 	"time"
 
 	"internal/dbaser"
+	"internal/memo"
 	"internal/middles"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
 	"github.com/jackc/pgx/v5"
-//	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type gauge float64
-type counter int64
-type MemStorage struct {
-	gau    map[string]gauge
-	count  map[string]counter
-	mutter sync.RWMutex
-}
+type gauge = memo.Gauge
+type counter = memo.Counter
+type MemStorage = memo.MemStorage
 
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
@@ -48,13 +42,16 @@ type Metrics struct {
 var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
-var isBase = false
 
-type str4db struct {
-	MetricBase *pgx.Conn
-}
+//var isBase = false
 
-var MetricBaseStruct str4db
+// type str4db struct {
+// 	ctx        context.Context
+// 	isBase     bool
+// 	MetricBase *pgx.Conn
+// }
+
+var MetricBaseStruct dbaser.Struct4db
 
 func saver(memStor *MemStorage, fnam string) error {
 
@@ -74,31 +71,19 @@ func main() {
 	}
 
 	memStor = MemStorage{
-		gau:   make(map[string]gauge),
-		count: make(map[string]counter),
+		Gaugemetr: make(map[string]memo.Gauge),
+		Countmetr: make(map[string]memo.Counter),
 	}
 
 	if reStore {
 		_ = memStor.LoadMS(fileStorePath)
 	}
 
+	//fmt.Println(memStor.Countmetr, memStor.Gaugemetr)
+	//log.Printf("base url %v\t\t\tis connected %v\n\n\n", MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.IsBase)
+
 	if storeInterval > 0 {
 		go saver(&memStor, fileStorePath)
-	}
-
-	ctx := context.Background()
-	mb, err := pgx.Connect(ctx, dbEndPoint)
-	MetricBaseStruct = str4db{MetricBase: mb}
-	if err != nil {
-		isBase = false
-		log.Printf("Can't connect to DB %s\n", dbEndPoint)
-	} else {
-		err = dbaser.TableCreation(ctx, MetricBaseStruct.MetricBase)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to create tables: %v\n", err)
-		} else {
-			isBase = true
-		}
 	}
 
 	if err := run(); err != nil {

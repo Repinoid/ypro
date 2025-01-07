@@ -1,6 +1,6 @@
-module github.com/Repinoid/ypro
+module main
 
-go 1.23.2
+go 1.22.3
 
 require (
 	github.com/gorilla/mux v1.8.1
@@ -12,15 +12,12 @@ require (
 require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-resty/resty/v2 v2.16.2
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -28,8 +25,12 @@ require (
 
 require internal/dbaser v1.0.0
 
+require internal/memo v1.0.0
+
 require internal/middles v1.0.0
 
 replace internal/dbaser => ./internal/dbaser
 
 replace internal/middles => ./internal/middles
+
+replace internal/memo => ./internal/memo
