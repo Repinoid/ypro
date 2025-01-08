@@ -74,7 +74,6 @@ func getMetrix(memStor *MemStorage) error {
 	}
 	return nil
 }
-
 func postMetric(metricType, metricName, metricValue string) error {
 	var metr Metrics
 	switch metricType {
@@ -137,38 +136,19 @@ func run() error {
 			}
 			time.Sleep(time.Duration(pollInterval) * time.Second)
 		}
-		postByOne(memStor, cunt)
-		// for name, value := range memStor.gau {
-		// 	valStr := strconv.FormatFloat(float64(value), 'f', 4, 64)
-		// 	err := postMetric("gauge", name, valStr)
-		// 	if err != nil {
-		// 		log.Println(err, "gauge", name, valStr)
-		// 	}
-		// }
-		// for name := range memStor.count {
-		// 	valStr := strconv.FormatInt(int64(cunt), 10)
-		// 	err := postMetric("counter", name, valStr)
-		// 	if err != nil {
-		// 		log.Println(err, "counter", name, valStr)
-		// 	}
-		// }
-	}
-}
-
-func postByOne(memStor *MemStorage, cunt int) error {
-	for name, value := range memStor.gau {
-		valStr := strconv.FormatFloat(float64(value), 'f', 4, 64)
-		err := postMetric("gauge", name, valStr)
-		if err != nil {
-			log.Println(err, "gauge", name, valStr)
+		for name, value := range memStor.gau {
+			valStr := strconv.FormatFloat(float64(value), 'f', 4, 64)
+			err := postMetric("gauge", name, valStr)
+			if err != nil {
+				log.Println(err, "gauge", name, valStr)
+			}
+		}
+		for name := range memStor.count {
+			valStr := strconv.FormatInt(int64(cunt), 10)
+			err := postMetric("counter", name, valStr)
+			if err != nil {
+				log.Println(err, "counter", name, valStr)
+			}
 		}
 	}
-	for name := range memStor.count {
-		valStr := strconv.FormatInt(int64(cunt), 10)
-		err := postMetric("counter", name, valStr)
-		if err != nil {
-			log.Println(err, "counter", name, valStr)
-		}
-	}
-	return nil
 }
