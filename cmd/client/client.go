@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 type gauge float64
@@ -115,10 +118,6 @@ func postMetric(metricType, metricName, metricValue string) error {
 }
 
 func main() {
-	if err := foa4Agent(); err != nil {
-		log.Fatal("INTERVAL error ", err)
-		return
-	}
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -126,30 +125,74 @@ func main() {
 
 func run() error {
 	memStor := new(MemStorage)
-	for {
-		cunt := 0
-		for i := 0; i < reportInterval/pollInterval; i++ {
-			err := getMetrix(memStor)
-			if err != nil {
-				log.Println(err, "getMetrix")
-			} else {
-				cunt++
-			}
-			time.Sleep(time.Duration(pollInterval) * time.Second)
-		}
-		for name, value := range memStor.gau {
-			valStr := strconv.FormatFloat(float64(value), 'f', 4, 64)
-			err := postMetric("gauge", name, valStr)
-			if err != nil {
-				log.Println(err, "gauge", name, valStr)
-			}
-		}
-		for name := range memStor.count {
-			valStr := strconv.FormatInt(int64(cunt), 10)
-			err := postMetric("counter", name, valStr)
-			if err != nil {
-				log.Println(err, "counter", name, valStr)
-			}
-		}
+		bunch := makeBunchOfMetrics(memStor)
+		postBunch(bunch)
+				err := getMetrix(memStor)
+						if err != nil {
+							log.Println(err, "getMetrix")
+						} 
+	// for {
+	// 	cunt := 0
+	// 	for i := 0; i < reportInterval/pollInterval; i++ {
+	// 		err := getMetrix(memStor)
+	// 		if err != nil {
+	// 			log.Println(err, "getMetrix")
+	// 		} else {
+	// 			cunt++
+	// 		}
+	// 		time.Sleep(time.Duration(pollInterval) * time.Second)
+	// 	}
+	// 	bunch := makeBunchOfMetrics(memStor)
+	// 	postBunch(bunch)
+	// }
+
+}
+func postBunch(bunch []Metrics) error {
+	marshalledBunch, err := json.Marshal(bunch)
+	compressedBunch, err := pack2gzip(marshalledBunch)
+
+	httpc := resty.New() //
+	httpc.SetBaseURL("http://localhost:8080")
+	req := httpc.R().
+		//		SetHeader("Accept", "text/html").
+		SetHeader("Content-Type", "gzip").
+		SetBody(compressedBunch)//.
+	//	SetResult(&result)  
+		//		SetHeader("Accept-Encoding", "gzip")
+
+	resp, err := req.
+	//	SetDoNotParseResponse(true).
+		Post("updates/").
+
+	return err
+}
+
+func makeBunchOfMetrics(memStor *MemStorage) []Metrics {
+	metrArray := make([]Metrics, len(memStor.gau)+len(memStor.count))
+
+	for metrName, metrValue := range memStor.gau {
+		mval := float64(metrValue)
+		metr := Metrics{ID: metrName, MType: "gauge", Value: &mval}
+		metrArray = append(metrArray, metr)
 	}
+	for metrName, metrValue := range memStor.count {
+		mval := int64(metrValue)
+		metr := Metrics{ID: metrName, MType: "counter", Delta: &mval}
+		metrArray = append(metrArray, metr)
+	}
+	return metrArray
+}
+
+func pack2gzip(data2pack []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.ModTime = time.Now()
+	_, err := zw.Write(data2pack)
+	if err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("gzip.NewWriter.Close %w ", err)
+	}
+	return buf.Bytes(), nil
 }
