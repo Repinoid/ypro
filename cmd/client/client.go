@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -124,13 +123,16 @@ func main() {
 }
 
 func run() error {
-	memStor := new(MemStorage)
-		bunch := makeBunchOfMetrics(memStor)
-		postBunch(bunch)
-				err := getMetrix(memStor)
-						if err != nil {
-							log.Println(err, "getMetrix")
-						} 
+	memStor := MemStorage{}
+	err := getMetrix(&memStor)
+	if err != nil {
+		log.Println(err, "getMetrix")
+	}
+	bunch := makeBunchOfMetrics(&memStor)
+	err = postBunch(bunch)
+	if err != nil {
+		log.Println(err, "postbunch")
+	}
 	// for {
 	// 	cunt := 0
 	// 	for i := 0; i < reportInterval/pollInterval; i++ {
@@ -145,30 +147,35 @@ func run() error {
 	// 	bunch := makeBunchOfMetrics(memStor)
 	// 	postBunch(bunch)
 	// }
-
+	return nil
 }
 func postBunch(bunch []Metrics) error {
 	marshalledBunch, err := json.Marshal(bunch)
+	if err != nil {
+		return err
+	}
 	compressedBunch, err := pack2gzip(marshalledBunch)
-
+	if err != nil {
+		return err
+	}
 	httpc := resty.New() //
 	httpc.SetBaseURL("http://localhost:8080")
 	req := httpc.R().
-		//		SetHeader("Accept", "text/html").
-		SetHeader("Content-Type", "gzip").
-		SetBody(compressedBunch)//.
-	//	SetResult(&result)  
-		//		SetHeader("Accept-Encoding", "gzip")
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(compressedBunch).
+		SetHeader("Accept-Encoding", "gzip")
 
 	resp, err := req.
-	//	SetDoNotParseResponse(true).
-		Post("updates/").
+		SetDoNotParseResponse(false).
+		Post("/updates")
+
+	fmt.Printf("%+v\n", resp)
 
 	return err
 }
 
 func makeBunchOfMetrics(memStor *MemStorage) []Metrics {
-	metrArray := make([]Metrics, len(memStor.gau)+len(memStor.count))
+	metrArray := make([]Metrics, 0, len(memStor.gau)+len(memStor.count))
 
 	for metrName, metrValue := range memStor.gau {
 		mval := float64(metrValue)
@@ -186,7 +193,7 @@ func makeBunchOfMetrics(memStor *MemStorage) []Metrics {
 func pack2gzip(data2pack []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
-	zw.ModTime = time.Now()
+	//	zw.ModTime = time.Now()
 	_, err := zw.Write(data2pack)
 	if err != nil {
 		return nil, fmt.Errorf("gzip.NewWriter.Write %w ", err)

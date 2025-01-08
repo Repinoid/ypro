@@ -21,17 +21,25 @@ type Metrics struct {
 }
 
 func bunchas(rwr http.ResponseWriter, req *http.Request) {
-	reader := io.Reader(req.Body)
-	var err error
-	if req.Header.Get(`Content-Encoding`) == `gzip` { // if compressed input
-		reader, err = unpackFromGzip(req.Body) // then unpack body
-		if err != nil {
-			rwr.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
+	telo, err := io.ReadAll(req.Body)
+	//	reader := bytes.NewReader(telo)
+	//var err error
+	//	telo := []byte
+	// if req.Header.Get(`Content-Encoding`) == `gzip` { // if compressed input
+	// //	unp, err := unpackFromGzip(reader) // then unpack body
+	// 	unp, err := gzip.NewReader(reader)
+	// 	if err != nil {
+	// 		rwr.WriteHeader(http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	_, err = unp.Read(telo)
+	// 	if err != nil {
+	// 		rwr.WriteHeader(http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
 
-	telo, err := io.ReadAll(reader)
+	//telo, err := io.ReadAll(reader)
 	if err != nil {
 		rwr.WriteHeader(http.StatusBadRequest)
 		return
@@ -46,5 +54,6 @@ func bunchas(rwr http.ResponseWriter, req *http.Request) {
 	for _, j := range memor {
 		fmt.Printf("%+v\n", j)
 	}
-
+	reply := struct{ Dlina int }{Dlina: len(memor)}
+	json.NewEncoder(rwr).Encode(reply)
 }
