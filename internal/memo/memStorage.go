@@ -1,6 +1,7 @@
 package memo
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -96,9 +97,13 @@ type MStorJSON struct {
 }
 
 func (memorial *MemStorage) UnmarshalMS(data []byte) error {
-	memor := MStorJSON{}
-	memor.Gaugemetr = map[string]gauge{}
-	memor.Countmetr = make(map[string]counter)
+	memor := MStorJSON{
+		Gaugemetr: make(map[string]gauge),
+		Countmetr: make(map[string]counter),
+	}
+	// memor := MStorJSON{}
+	// memor.Gaugemetr = map[string]gauge{}
+	// memor.Countmetr = make(map[string]counter)
 	buf := bytes.NewBuffer(data)
 	memorial.Mutter.Lock()
 	err := json.NewDecoder(buf).Decode(&memor)
@@ -118,23 +123,24 @@ func (memorial *MemStorage) MarshalMS() ([]byte, error) {
 	return append(buf.Bytes(), '\n'), err
 }
 
-//	func (memorial *MemStorage) LoadMS(fnam string) error {
-//		phil, err := os.OpenFile(fnam, os.O_RDONLY, 0666)
-//		if err != nil {
-//			return fmt.Errorf("file %s Open error %v", fnam, err)
-//		}
-//		reader := bufio.NewReader(phil)
-//		data, err := reader.ReadBytes('\n')
-//		if err != nil {
-//			return fmt.Errorf("file %s Read error %v", fnam, err)
-//		}
-//		err = memorial.UnmarshalMS(data)
-//		log.Printf("LoadMS    %+v\ndata %+v\n\n\n\n", memorial, string(data))
-//		if err != nil {
-//			return fmt.Errorf(" Memstorage UnMarshal error %v", err)
-//		}
-//		return nil
-//	}
+func (memorial *MemStorage) LoadMS(fnam string) error {
+	phil, err := os.OpenFile(fnam, os.O_RDONLY, 0666)
+	if err != nil {
+		return fmt.Errorf("file %s Open error %v", fnam, err)
+	}
+	reader := bufio.NewReader(phil)
+	data, err := reader.ReadBytes('\n')
+	if err != nil {
+		return fmt.Errorf("file %s Read error %v", fnam, err)
+	}
+	err = memorial.UnmarshalMS(data)
+	log.Printf("LoadMS    %+v\ndata %+v\n\n\n\n", memorial, string(data))
+	if err != nil {
+		return fmt.Errorf(" Memstorage UnMarshal error %v", err)
+	}
+	return nil
+}
+
 func (memorial *MemStorage) SaveMS(fnam string) error {
 	phil, err := os.OpenFile(fnam, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
