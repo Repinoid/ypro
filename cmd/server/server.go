@@ -12,10 +12,12 @@ curl localhost:8080/update/ -H "Content-Type":"application/json" -d "{\"type\":\
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"internal/dbaser"
@@ -70,16 +72,16 @@ func main() {
 		return
 	}
 
-	memStor = MemStorage{
-		Gaugemetr: make(map[string]memo.Gauge),
-		Countmetr: make(map[string]memo.Counter),
-	}
+	memStor = MemStorage{}
+	memStor.Gaugemetr = map[string]gauge{}
+	memStor.Countmetr = make(map[string]counter)
 
 	if reStore {
-		_ = memStor.LoadMS(fileStorePath)
+		//_ = LoadMS(&memStor, "Y:/GO/ypro/goshran.txt")
+		_ = LoadMS(&memStor, fileStorePath)
 	}
 
-	//fmt.Println(memStor.Countmetr, memStor.Gaugemetr)
+	log.Printf("%+v\t%+v\n", memStor.Countmetr, memStor.Gaugemetr)
 	//log.Printf("base url %v\t\t\tis connected %v\n\n\n", MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.IsBase)
 
 	if storeInterval > 0 {
@@ -145,6 +147,25 @@ func dbPinger(rwr http.ResponseWriter, req *http.Request) {
 	rwr.WriteHeader(http.StatusOK)
 	//log.Printf("AFTER PING DB error is %v\n", err)
 	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
+}
+
+func LoadMS(memorial *MemStorage, fnam string) error {
+	phil, err := os.OpenFile(fnam, os.O_RDONLY, 0666)
+	//	phil, err := os.Open(fnam)
+	if err != nil {
+		return fmt.Errorf("file %s Open error %v", fnam, err)
+	}
+	defer phil.Close()
+	reader := bufio.NewReader(phil)
+	data, err := reader.ReadBytes('\n')
+	if err != nil {
+		return fmt.Errorf("file %s Read error %v", fnam, err)
+	}
+	err = memorial.UnmarshalMS(data)
+	if err != nil {
+		return fmt.Errorf(" Memstorage UnMarshal error %v", err)
+	}
+	return nil
 }
 
 /*

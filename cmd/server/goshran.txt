@@ -1,2 +1,0 @@
-{"Gaugemetr":{"gg":55,"nam":77},"Countmetr":{"PopulateCounter2783772":0,"PopulateCounter5440306":0}}
-
