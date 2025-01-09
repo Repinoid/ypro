@@ -78,14 +78,14 @@ func main() {
 		Countmetr: make(map[string]counter),
 	}
 
-	if reStore {
+	if reStore && !MetricBaseStruct.IsBase {
 		//_ = LoadMS(&memStor, "Y:/GO/ypro/goshran.txt")
 		//		_ = memo.LoadMS(&memStor, fileStorePath)
 		_ = memStor.LoadMS(fileStorePath)
 
 	}
 
-	log.Printf("%+v\t%+v\n", memStor.Countmetr, memStor.Gaugemetr)
+	//log.Printf("%+v\t%+v\n", memStor.Countmetr, memStor.Gaugemetr)
 	//log.Printf("base url %v\t\t\tis connected %v\n\n\n", MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.IsBase)
 
 	if storeInterval > 0 {

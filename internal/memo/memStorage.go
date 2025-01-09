@@ -134,7 +134,7 @@ func (memorial *MemStorage) LoadMS(fnam string) error {
 		return fmt.Errorf("file %s Read error %v", fnam, err)
 	}
 	err = memorial.UnmarshalMS(data)
-	log.Printf("LoadMS    %+v\ndata %+v\n\n\n\n", memorial, string(data))
+	//	log.Printf("LoadMS    %+v\ndata %+v\n\n\n\n", memorial, string(data))
 	if err != nil {
 		return fmt.Errorf(" Memstorage UnMarshal error %v", err)
 	}
