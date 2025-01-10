@@ -99,7 +99,7 @@ func saver(memStor *MemStorage, fnam string) error {
 
 }
 
-func main() {
+func maina() {
 
 	g := map[string]gauge{"gs1": gauge(99.77), "gs2": gauge(88.88)}
 	c := map[string]counter{"cs1": counter(rand.IntN(100)), "cs2": counter(rand.IntN(100))}
