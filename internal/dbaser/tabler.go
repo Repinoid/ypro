@@ -2,12 +2,15 @@ package dbaser
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	//	"log"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Struct4db struct {
@@ -76,6 +79,12 @@ func TablePutGauge(ctx context.Context, db *pgx.Conn, mname string, value float6
 	if err == nil {
 		return nil
 	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code != pgerrcode.UniqueViolation {
+		return fmt.Errorf("error Insert Gauge %s with %g value. TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
+			mname, value, tag1.String(), pgErr, err)
+	}
+
 	order = fmt.Sprintf("UPDATE Gauge SET value=%[2]g WHERE metricname='%[1]s'", mname, value)
 	tag2, err := db.Exec(ctx, order)
 	//	log.Printf("TableUpdateGauge err %v\n db %v\n\n", err, db)
@@ -104,6 +113,11 @@ func TablePutCounter(ctx context.Context, db *pgx.Conn, mname string, value int6
 	tag1, err := db.Exec(ctx, order)
 	if err == nil {
 		return nil
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code != pgerrcode.UniqueViolation {
+		return fmt.Errorf("error Insert Counter %s with %d value. TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
+			mname, value, tag1.String(), pgErr, err)
 	}
 	order = fmt.Sprintf("UPDATE Counter SET value=value+%[2]d WHERE metricname='%[1]s'", mname, value)
 	tag2, err := db.Exec(ctx, order)
