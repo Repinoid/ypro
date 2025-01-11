@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"internal/dbaser"
-	"log"
 	"sync"
 
 	"os"
@@ -27,8 +26,7 @@ func AddGauge(memorial *MemStorage, baza dbaser.Struct4db, name string, value ga
 	if baza.IsBase {
 		err := dbaser.TablePutGauge(baza.Ctx, baza.MetricBase, name, float64(value))
 		if err != nil {
-			log.Printf("from memstorage %v\nisBase - %v\\n\n\n", memorial, baza)
-			//sugar.Errorf("err", err)
+			return fmt.Errorf("AddGauge err name %s value %g baza %+v err %w\n", name, value, baza, err)
 		}
 	}
 	memorial.Mutter.Lock()
@@ -40,7 +38,7 @@ func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value 
 	if baza.IsBase {
 		err := dbaser.TablePutCounter(baza.Ctx, baza.MetricBase, name, int64(value))
 		if err != nil {
-			log.Printf("from memstorage %v\nisBase - %v\\n\n\n", memorial, baza)
+			return fmt.Errorf("AddCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 		}
 	}
 	memorial.Mutter.Lock()
@@ -60,7 +58,7 @@ func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, v
 			*value = counter(cunt)
 			return nil
 		}
-		log.Printf("from memstorage %v\nisBase - %v\\n\n\n", memorial, baza)
+		return fmt.Errorf("GetCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 	}
 	memorial.Mutter.RLock() // <---- MUTEX
 	defer memorial.Mutter.RUnlock()
@@ -78,7 +76,7 @@ func GetGaugeValue(memorial *MemStorage, baza dbaser.Struct4db, name string, val
 			*value = gauge(gaaga)
 			return nil
 		}
-		log.Printf("from memstorage %v\nisBase - %v\\n\n\n", memorial, baza)
+		return fmt.Errorf("GetGauge err name %s value %d baza %+v err %w\n", name, value, baza, err)
 	}
 	memorial.Mutter.RLock() // <---- MUTEX
 	defer memorial.Mutter.RUnlock()
