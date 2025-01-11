@@ -127,7 +127,8 @@ func TablePutCounter(ctx context.Context, db *pgx.Conn, mname string, value int6
 		mname, value, tag1.String(), tag2.String(), err)
 }
 
-func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string) (int64, error) {
+//func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string) (int64, error) {
+func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string) (interface{}, error) {
 	var inta int64
 	str := "SELECT value FROM counter WHERE metricname = $1;"
 	row := db.QueryRow(ctx, str, mname)
