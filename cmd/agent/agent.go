@@ -148,7 +148,7 @@ func run() error {
 		bunch := makeBunchOfMetrics(&memStor)
 		postBunch(bunch)
 		if err != nil {
-			log.Println(err, "postbunch")
+			log.Printf("AGENT postBunch ERROR %+v\n", err)
 		}
 	}
 	//return nil
@@ -168,12 +168,12 @@ func postBunch(bunch []Metrics) error {
 	httpc.SetRetryCount(3)
 	httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
 	httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
-	//tn := time.Now()                           // -------------
+	tn := time.Now()                           // -------------
 	httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
 		rwt := client.RetryWaitTime
-		//	fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
+		fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
 		client.SetRetryWaitTime(rwt + 2*time.Second)
-		//	tn = time.Now() // ----------------
+		tn = time.Now() // ----------------
 		return client.RetryWaitTime, nil
 	})
 
