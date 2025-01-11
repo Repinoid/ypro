@@ -150,22 +150,14 @@ func buncheras(rwr http.ResponseWriter, req *http.Request) {
 		rwr.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// //----------------------------
-	// ctx := context.Background()
-	// db, err := pgx.Connect(ctx, "postgres://postgres:passwordas@localhost:5432/forgo")
-	// if err != nil {
-	// 	log.Printf("%-v", err)
-	// }
-	// //-----------------------------------------------
+
 	err = dbaser.TableBuncher(MetricBaseStruct.Ctx, MetricBaseStruct.MetricBase, memor)
 	if err != nil {
 		log.Printf("TableBuncher    %+v", err)
 	}
-
 	// for _, j := range memor {
 	// 	fmt.Printf("%+v\n", j)
 	// }
-
 	reply := struct{ Dlina int }{Dlina: len(memor)}
 	json.NewEncoder(rwr).Encode(reply)
 

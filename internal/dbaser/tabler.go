@@ -94,20 +94,28 @@ func TablePutGauge(ctx context.Context, db *pgx.Conn, mname string, value float6
 		mname, value, tag1.String(), tag2.String(), err)
 }
 
-func TableGetGauge(ctx context.Context, db *pgx.Conn, mname string) (float64, error) {
-	var flo float64
+	func TableGetGauge(ctx context.Context, db *pgx.Conn, mname string, flo *float64) error {
+	//var flo float64
 	str := "SELECT value FROM gauge WHERE metricname = $1;"
 	row := db.QueryRow(ctx, str, mname)
-	err := row.Scan(&flo)
+	err := row.Scan(flo)
 	if err != nil {
-		return 0.0, fmt.Errorf("error get %s gauge metric.  %w", mname, err)
+		return fmt.Errorf("error get %s gauge metric.  %w", mname, err)
 	}
-	return flo, nil
+	return nil
+}
+func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string, inta *int64) error {
+	//var inta int64
+	str := "SELECT value FROM counter WHERE metricname = $1;"
+	row := db.QueryRow(ctx, str, mname)
+	err := row.Scan(inta)
+	if err != nil {
+		return fmt.Errorf("error get %s counter metric.  %w", mname, err)
+	}
+	return nil
 }
 
 func TablePutCounter(ctx context.Context, db *pgx.Conn, mname string, value int64) error {
-	//	oldval, _ := TableGetCounter(ctx, db, mname) // 0 if not exist
-	//	value += oldval
 	order := fmt.Sprintf("INSERT INTO Counter(metricname, value) VALUES ('%[1]s',%[2]d);", mname, value)
 	tag1, err := db.Exec(ctx, order)
 	if err == nil {
@@ -125,18 +133,6 @@ func TablePutCounter(ctx context.Context, db *pgx.Conn, mname string, value int6
 	}
 	return fmt.Errorf("error UPDATE Counter %s with %d value. TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
 		mname, value, tag1.String(), tag2.String(), err)
-}
-
-//func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string) (int64, error) {
-func TableGetCounter(ctx context.Context, db *pgx.Conn, mname string) (int64, error) {
-	var inta int64
-	str := "SELECT value FROM counter WHERE metricname = $1;"
-	row := db.QueryRow(ctx, str, mname)
-	err := row.Scan(&inta)
-	if err != nil {
-		return 0, fmt.Errorf("error get %s counter metric.  %w", mname, err)
-	}
-	return inta, nil
 }
 
 type Gauge float64

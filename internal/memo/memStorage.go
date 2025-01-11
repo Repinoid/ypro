@@ -51,7 +51,8 @@ func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value 
 }
 func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, value *counter) error {
 	if baza.IsBase {
-		cunt, err := dbaser.TableGetCounter(baza.Ctx, baza.MetricBase, name)
+		var cunt int64
+		err := dbaser.TableGetCounter(baza.Ctx, baza.MetricBase, name, &cunt)
 		if err == nil {
 			*value = counter(cunt)
 			return nil
@@ -68,7 +69,9 @@ func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, v
 }
 func GetGaugeValue(memorial *MemStorage, baza dbaser.Struct4db, name string, value *gauge) error {
 	if baza.IsBase {
-		gaaga, err := dbaser.TableGetGauge(baza.Ctx, baza.MetricBase, name)
+		var gaaga float64
+//		var gaaga float64
+		err := dbaser.TableGetGauge(baza.Ctx, baza.MetricBase, name, &gaaga)
 		if err == nil {
 			*value = gauge(gaaga)
 			return nil
