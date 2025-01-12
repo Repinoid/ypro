@@ -154,8 +154,8 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func TableBuncher(ctx context.Context, db *pgx.Conn, metrArray []Metrics) error {
-	tx, err := db.Begin(ctx)
+func TableBuncher(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
+	tx, err := MetricBaseStruct.MetricBase.Begin(MetricBaseStruct.Ctx)
 	if err != nil {
 		return fmt.Errorf("error db.Begin  %[1]w", err)
 	}
@@ -166,7 +166,7 @@ func TableBuncher(ctx context.Context, db *pgx.Conn, metrArray []Metrics) error 
 		} else {
 			order = fmt.Sprintf("UPDATE counter SET value=value+%[2]d WHERE metricname='%[1]s'", metrica.ID, *metrica.Delta)
 		}
-		tagUpdate, _ := tx.Exec(ctx, order)
+		tagUpdate, _ := tx.Exec(MetricBaseStruct.Ctx, order)
 		tu := tagUpdate.RowsAffected()
 		if tu != 0 { // если удалось записать - уже существует и INSERT не нужен
 			continue
@@ -176,11 +176,11 @@ func TableBuncher(ctx context.Context, db *pgx.Conn, metrArray []Metrics) error 
 		} else {
 			order = fmt.Sprintf("INSERT INTO counter(metricname, value) VALUES ('%[1]s',%[2]d);", metrica.ID, *metrica.Delta)
 		}
-		tagInsert, err := tx.Exec(ctx, order)
+		tagInsert, err := tx.Exec(MetricBaseStruct.Ctx, order)
 		if err != nil {
 			return fmt.Errorf("TableBuncher error UPDATE Metric %-v TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
 				metrica, tagInsert.String(), tagUpdate.String(), err)
 		}
 	}
-	return tx.Commit(ctx)
+	return tx.Commit(MetricBaseStruct.Ctx)
 }
