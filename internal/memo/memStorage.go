@@ -32,7 +32,7 @@ func AddGauge(memorial *MemStorage, baza dbaser.Struct4db, name string, value ga
 	if baza.IsBase {
 		valadr := float64(value)
 		metro := dbaser.Metrics{ID: name, MType: "counter", Value: &valadr}
-		err := dbaser.TablePutGauge(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TablePutGauge)(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddGauge err name %s value %g baza %+v err %w\n", name, value, baza, err)
 		}

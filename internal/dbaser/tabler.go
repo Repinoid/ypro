@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	//	"log"
 
@@ -195,4 +196,30 @@ func TableBuncher(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
 		}
 	}
 	return tx.Commit(MetricBaseStruct.Ctx)
+}
+
+var AttemptDelays = []int{1, 3, 5}
+
+type MetricValueTypes interface {
+	int64 | float64
+}
+
+// func TableMetricWrapper[MV MetricValueTypes](origFunc func(MetricBaseStruct *Struct4db, metr *Metrics) error) func(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TableMetricWrapper(origFunc func(MetricBaseStruct *Struct4db, metr *Metrics) error) func(MetricBaseStruct *Struct4db, metr *Metrics) error {
+
+	wrappedFunc := func(MetricBaseStruct *Struct4db, metr *Metrics) error {
+		err := origFunc(MetricBaseStruct, metr)
+		if err != nil {
+			for _, delay := range AttemptDelays {
+				time.Sleep(time.Duration(delay) * time.Second)
+				if err = origFunc(MetricBaseStruct, metr); err == nil {
+					break
+				}
+				fmt.Println(delay, " wrapped !")
+			}
+		}
+		return err
+	}
+	return wrappedFunc
+
 }
