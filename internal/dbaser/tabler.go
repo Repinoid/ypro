@@ -99,8 +99,23 @@ func TablePutGauge(MetricBaseStruct *Struct4db, mname string, value float64) err
 		mname, value, tag1.String(), tag2.String(), err)
 }
 
-func TableGetMetric() error {
-
+func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
+	str := fmt.Sprintf("SELECT value FROM %s WHERE metricname = $1;", metr.MType)
+	row := MetricBaseStruct.MetricBase.QueryRow(MetricBaseStruct.Ctx, str, metr.ID)
+	switch metr.MType {
+	case "counter":
+		err := row.Scan(metr.Delta)
+		if err != nil {
+			return fmt.Errorf("error get %s %s metric.  %w", metr.ID, metr.MType, err)
+		}
+	case "gauge":
+		err := row.Scan(metr.Value)
+		if err != nil {
+			return fmt.Errorf("error get %s %s metric.  %w", metr.ID, metr.MType, err)
+		}
+	default:
+		return fmt.Errorf("error get %s gauge metric.", metr.ID)
+	}
 	return nil
 }
 

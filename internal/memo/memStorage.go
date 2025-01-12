@@ -11,6 +11,13 @@ import (
 	"os"
 )
 
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
+
 type Gauge float64
 type Counter int64
 type gauge = Gauge
@@ -52,7 +59,9 @@ func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value 
 func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, value *counter) error {
 	if baza.IsBase {
 		var cunt int64
-		err := dbaser.TableGetCounter(&baza, name, &cunt)
+		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &cunt}
+		//	err := dbaser.TableGetCounter(&baza, name, &cunt)
+		err := dbaser.TableGetMetric(&baza, &metro)
 		if err == nil {
 			*value = counter(cunt)
 			return nil
@@ -71,9 +80,12 @@ func GetGaugeValue(memorial *MemStorage, baza dbaser.Struct4db, name string, val
 	if baza.IsBase {
 		var gaaga float64
 		//		var gaaga float64
-		err := dbaser.TableGetGauge(&baza, name, &gaaga)
+		metro := dbaser.Metrics{ID: name, MType: "gauge", Value: &gaaga}
+		//		err := dbaser.TableGetGauge(&baza, name, &gaaga)
+		err := dbaser.TableGetMetric(&baza, &metro)
 		if err == nil {
-			*value = gauge(gaaga)
+			*value = gauge(*metro.Value)
+			//			*value = gauge(gaaga)
 			return nil
 		}
 		return fmt.Errorf("GetGauge err name %s value %d baza %+v err %w\n", name, value, baza, err)
