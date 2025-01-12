@@ -30,7 +30,9 @@ type MemStorage struct {
 
 func AddGauge(memorial *MemStorage, baza dbaser.Struct4db, name string, value gauge) error {
 	if baza.IsBase {
-		err := dbaser.TablePutGauge(&baza, name, float64(value))
+		valadr := float64(value)
+		metro := dbaser.Metrics{ID: name, MType: "counter", Value: &valadr}
+		err := dbaser.TablePutGauge(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddGauge err name %s value %g baza %+v err %w\n", name, value, baza, err)
 		}
@@ -42,7 +44,9 @@ func AddGauge(memorial *MemStorage, baza dbaser.Struct4db, name string, value ga
 }
 func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value counter) error {
 	if baza.IsBase {
-		err := dbaser.TablePutCounter(&baza, name, int64(value))
+		valadr := int64(value)
+		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &valadr}
+		err := dbaser.TablePutCounter(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 		}
