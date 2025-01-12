@@ -46,7 +46,7 @@ func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value 
 	if baza.IsBase {
 		valadr := int64(value)
 		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &valadr}
-		err := dbaser.TablePutCounter(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TablePutCounter)(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 		}
@@ -65,7 +65,7 @@ func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, v
 		var cunt int64
 		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &cunt}
 		//	err := dbaser.TableGetCounter(&baza, name, &cunt)
-		err := dbaser.TableGetMetric(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TableGetMetric)(&baza, &metro)
 		if err == nil {
 			*value = counter(cunt)
 			return nil
@@ -86,7 +86,7 @@ func GetGaugeValue(memorial *MemStorage, baza dbaser.Struct4db, name string, val
 		//		var gaaga float64
 		metro := dbaser.Metrics{ID: name, MType: "gauge", Value: &gaaga}
 		//		err := dbaser.TableGetGauge(&baza, name, &gaaga)
-		err := dbaser.TableGetMetric(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TableGetMetric)(&baza, &metro)
 		if err == nil {
 			*value = gauge(*metro.Value)
 			//			*value = gauge(gaaga)
