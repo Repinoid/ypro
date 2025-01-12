@@ -19,45 +19,45 @@ type Struct4db struct {
 }
 
 // func TableGetAllCounters(ctx context.Context, db *pgx.Conn) (map[string]int64, error) {
-func TableGetAllCounters(MetricBaseStruct *Struct4db) (map[string]int64, error) {
+func TableGetAllCounters(MetricBaseStruct *Struct4db, mappa *map[string]int64) error {
 	var inta int64
 	var str string
-	mappa := map[string]int64{}
+	//	mappa := map[string]int64{}
 	zapros := "SELECT * FROM counter;"
 	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
 	if err != nil {
-		return nil, fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
+		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
 			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 	}
 	for rows.Next() {
 		err = rows.Scan(&str, &inta)
 		if err != nil {
-			return nil, fmt.Errorf("error counter table Scan %[2]s:%[3]d database\n%[1]w", err,
+			return fmt.Errorf("error counter table Scan %[2]s:%[3]d database\n%[1]w", err,
 				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 		}
-		mappa[str] = inta
+		(*mappa)[str] = inta
 	}
-	return mappa, nil
+	return nil
 }
-func TableGetAllGauges(MetricBaseStruct *Struct4db) (map[string]float64, error) {
+func TableGetAllGauges(MetricBaseStruct *Struct4db, mappa *map[string]float64) error {
 	var flo float64
 	var str string
-	mappa := map[string]float64{}
+	//	mappa := map[string]float64{}
 	zapros := "SELECT * FROM gauge;"
 	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
 	if err != nil {
-		return nil, fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
+		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
 			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 	}
 	for rows.Next() {
 		err = rows.Scan(&str, &flo)
 		if err != nil {
-			return nil, fmt.Errorf("error gauge table Scan %[2]s:%[3]d database\n%[1]w", err,
+			return fmt.Errorf("error gauge table Scan %[2]s:%[3]d database\n%[1]w", err,
 				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 		}
-		mappa[str] = flo
+		(*mappa)[str] = flo
 	}
-	return mappa, nil
+	return nil
 }
 
 func TableCreation(MetricBaseStruct *Struct4db) error {

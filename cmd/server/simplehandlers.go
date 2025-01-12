@@ -25,11 +25,13 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if MetricBaseStruct.IsBase {
-		mGauge, err := dbaser.TableGetAllGauges(&MetricBaseStruct)
+		mGauge := map[string]float64{}
+		err := dbaser.TableGetAllGauges(&MetricBaseStruct, &mGauge)
 		if err != nil {
 			log.Printf("bad allgauges\n %v\n", err)
 		}
-		mCounter, err := dbaser.TableGetAllCounters(&MetricBaseStruct)
+		mCounter := map[string]int64{}
+		err = dbaser.TableGetAllCounters(&MetricBaseStruct, &mCounter)
 		if err != nil {
 			log.Printf("bad allcounters\n %v\n", err)
 		}
