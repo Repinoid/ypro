@@ -151,7 +151,7 @@ func buncheras(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = dbaser.TableBuncher(&MetricBaseStruct, memor)
+	err = dbaser.TableBuncherWrapper(dbaser.TableBuncher)(&MetricBaseStruct, memor)
 	if err != nil {
 		log.Printf("TableBuncher    %+v", err)
 	}
