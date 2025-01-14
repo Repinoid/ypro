@@ -8,8 +8,8 @@ type MetricValueTypes interface {
 	int64 | float64
 }
 
-func TableMetricWrapper(origFunc func(MetricBaseStruct *Struct4db, metr *Metrics) error) func(MetricBaseStruct *Struct4db, metr *Metrics) error {
-	wrappedFunc := func(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TableMetricWrapper(origFunc func(MetricBaseStruct *DBstruct, metr *Metrics) error) func(MetricBaseStruct *DBstruct, metr *Metrics) error {
+	wrappedFunc := func(MetricBaseStruct *DBstruct, metr *Metrics) error {
 		err := origFunc(MetricBaseStruct, metr)
 		if err != nil {
 			for _, delay := range AttemptDelays {
@@ -25,8 +25,8 @@ func TableMetricWrapper(origFunc func(MetricBaseStruct *Struct4db, metr *Metrics
 	return wrappedFunc
 }
 
-func TableBuncherWrapper(origFunc func(MetricBaseStruct *Struct4db, metrArray []Metrics) error) func(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
-	wrappedFunc := func(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
+func TableBuncherWrapper(origFunc func(MetricBaseStruct *DBstruct, metrArray []Metrics) error) func(MetricBaseStruct *DBstruct, metrArray []Metrics) error {
+	wrappedFunc := func(MetricBaseStruct *DBstruct, metrArray []Metrics) error {
 		err := origFunc(MetricBaseStruct, metrArray)
 		if err != nil {
 			for _, delay := range AttemptDelays {
@@ -42,9 +42,9 @@ func TableBuncherWrapper(origFunc func(MetricBaseStruct *Struct4db, metrArray []
 	return wrappedFunc
 }
 
-func TableGetAllsWrapper[MV MetricValueTypes](origFunc func(MetricBaseStruct *Struct4db, mappa *map[string]MV) error) func(MetricBaseStruct *Struct4db,
+func TableGetAllsWrapper[MV MetricValueTypes](origFunc func(MetricBaseStruct *DBstruct, mappa *map[string]MV) error) func(MetricBaseStruct *DBstruct,
 	mappa *map[string]MV) error {
-	wrappedFunc := func(MetricBaseStruct *Struct4db, mappa *map[string]MV) error {
+	wrappedFunc := func(MetricBaseStruct *DBstruct, mappa *map[string]MV) error {
 		err := origFunc(MetricBaseStruct, mappa)
 		if err != nil {
 			for _, delay := range AttemptDelays {

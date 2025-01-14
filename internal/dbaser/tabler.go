@@ -13,13 +13,13 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type Struct4db struct {
+type DBstruct struct {
 	Ctx        context.Context
 	IsBase     bool
 	MetricBase *pgx.Conn
 }
 
-func TableGetAllMetrics[MV int64 | float64](MetricBaseStruct *Struct4db, mappa *map[string]MV) error {
+func TableGetAllMetrics[MV int64 | float64](MetricBaseStruct *DBstruct, mappa *map[string]MV) error {
 	tip := reflect.TypeOf(mappa).String()
 	var zapros string
 	var value MV
@@ -87,7 +87,7 @@ func TableGetAllMetrics[MV int64 | float64](MetricBaseStruct *Struct4db, mappa *
 // 	return nil
 // }
 
-func TableCreation(MetricBaseStruct *Struct4db) error {
+func TableCreation(MetricBaseStruct *DBstruct) error {
 	crea := "CREATE TABLE IF NOT EXISTS Gauge(metricname VARCHAR(30) PRIMARY KEY, value FLOAT8);"
 	tag, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, crea)
 	if err != nil {
@@ -121,7 +121,7 @@ func TableCreation(MetricBaseStruct *Struct4db) error {
 // 		metr, tag1.String(), tag2.String(), err)
 // }
 
-func TablePutMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TablePutMetric(MetricBaseStruct *DBstruct, metr *Metrics) error {
 	//	(X || Y) && !(X && Y)
 	XoR := (metr.Value == nil && metr.Delta == nil) || (metr.Value != nil && metr.Delta != nil)
 	if XoR {
@@ -174,7 +174,7 @@ func TablePutMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
 // 		metr, tag1.String(), tag2.String(), err)
 // }
 
-func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TableGetMetric(MetricBaseStruct *DBstruct, metr *Metrics) error {
 	str := fmt.Sprintf("SELECT value FROM %s WHERE metricname = $1;", metr.MType)
 	row := MetricBaseStruct.MetricBase.QueryRow(MetricBaseStruct.Ctx, str, metr.ID)
 	switch metr.MType {
@@ -203,7 +203,7 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func TableBuncher(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
+func TableBuncher(MetricBaseStruct *DBstruct, metrArray []Metrics) error {
 	tx, err := MetricBaseStruct.MetricBase.Begin(MetricBaseStruct.Ctx)
 	if err != nil {
 		return fmt.Errorf("error db.Begin  %[1]w", err)
