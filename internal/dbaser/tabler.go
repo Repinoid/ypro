@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	//	"log"
 
@@ -18,44 +19,73 @@ type Struct4db struct {
 	MetricBase *pgx.Conn
 }
 
-func TableGetAllCounters(MetricBaseStruct *Struct4db, mappa *map[string]int64) error {
-	var inta int64
+func TableGetAllMetrics[MV int64 | float64](MetricBaseStruct *Struct4db, mappa *map[string]MV) error {
+	tip := reflect.TypeOf(mappa).String()
+	var zapros string
+	var value MV
 	var str string
-	zapros := "SELECT * FROM counter;"
+	switch tip {
+	case "*map[string]int64":
+		zapros = "SELECT * FROM counter;"
+	case "*map[string]float64":
+		zapros = "SELECT * FROM gauge;"
+	default:
+		return fmt.Errorf("wrong type %s", tip)
+	}
 	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
 	if err != nil {
 		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
 			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 	}
 	for rows.Next() {
-		err = rows.Scan(&str, &inta)
+		err = rows.Scan(&str, &value)
 		if err != nil {
 			return fmt.Errorf("error counter table Scan %[2]s:%[3]d database\n%[1]w", err,
 				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
 		}
-		(*mappa)[str] = inta
+		(*mappa)[str] = value
 	}
 	return nil
 }
-func TableGetAllGauges(MetricBaseStruct *Struct4db, mappa *map[string]float64) error {
-	var flo float64
-	var str string
-	zapros := "SELECT * FROM gauge;"
-	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
-	if err != nil {
-		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
-			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
-	}
-	for rows.Next() {
-		err = rows.Scan(&str, &flo)
-		if err != nil {
-			return fmt.Errorf("error gauge table Scan %[2]s:%[3]d database\n%[1]w", err,
-				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
-		}
-		(*mappa)[str] = flo
-	}
-	return nil
-}
+
+// func TableGetAllCounters(MetricBaseStruct *Struct4db, mappa *map[string]int64) error {
+// 	var inta int64
+// 	var str string
+// 	zapros := "SELECT * FROM counter;"
+// 	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
+// 	if err != nil {
+// 		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
+// 			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
+// 	}
+// 	for rows.Next() {
+// 		err = rows.Scan(&str, &inta)
+// 		if err != nil {
+// 			return fmt.Errorf("error counter table Scan %[2]s:%[3]d database\n%[1]w", err,
+// 				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
+// 		}
+// 		(*mappa)[str] = inta
+// 	}
+// 	return nil
+// }
+// func TableGetAllGauges(MetricBaseStruct *Struct4db, mappa *map[string]float64) error {
+// 	var flo float64
+// 	var str string
+// 	zapros := "SELECT * FROM gauge;"
+// 	rows, err := MetricBaseStruct.MetricBase.Query(MetricBaseStruct.Ctx, zapros)
+// 	if err != nil {
+// 		return fmt.Errorf("error Query %[2]s:%[3]d database  %[1]w", err,
+// 			MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
+// 	}
+// 	for rows.Next() {
+// 		err = rows.Scan(&str, &flo)
+// 		if err != nil {
+// 			return fmt.Errorf("error gauge table Scan %[2]s:%[3]d database\n%[1]w", err,
+// 				MetricBaseStruct.MetricBase.Config().Host, MetricBaseStruct.MetricBase.Config().Port)
+// 		}
+// 		(*mappa)[str] = flo
+// 	}
+// 	return nil
+// }
 
 func TableCreation(MetricBaseStruct *Struct4db) error {
 	crea := "CREATE TABLE IF NOT EXISTS Gauge(metricname VARCHAR(30) PRIMARY KEY, value FLOAT8);"
