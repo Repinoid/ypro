@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"internal/dbaser"
 	"internal/memo"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -31,6 +28,7 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	case "counter":
 		var cunt counter
 		if memo.GetCounterValue(&memStor, MetricBaseStruct, metra.ID, &cunt) != nil {
+			//	if memStor.GetCounterValue(metra.ID, &cunt) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -41,6 +39,7 @@ func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	case "gauge":
 		var gaaga gauge
 		if memo.GetGaugeValue(&memStor, MetricBaseStruct, metra.ID, &gaaga) != nil {
+			//if memStor.GetGaugeValue(metra.ID, &gaaga) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -92,10 +91,12 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 			return
 		}
 		rwr.WriteHeader(http.StatusOK)
+		//	memStor.AddCounter(metricName, counter(*metricDelta))
 		memo.AddCounter(&memStor, MetricBaseStruct, metricName, counter(*metricDelta))
 		// get new value from memstorage
 		var cunt counter
 		if memo.GetCounterValue(&memStor, MetricBaseStruct, metra.ID, &cunt) != nil {
+			//	if memStor.GetCounterValue(metra.ID, &cunt) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -110,11 +111,13 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 		}
 		rwr.WriteHeader(http.StatusOK)
 
+		//	log.Printf("%v\nisBase - %v\ncheck - %v\n\n\n", MetricBase, isBase, check)
 
 		memo.AddGauge(&memStor, MetricBaseStruct, metricName, gauge(*metricValue))
 		// get new value from memstorage
 		var gaaga gauge
 		if memo.GetGaugeValue(&memStor, MetricBaseStruct, metra.ID, &gaaga) != nil {
+			//	if memStor.GetGaugeValue(metra.ID, &gaaga) != nil {
 			rwr.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(rwr, nil)
 			return
@@ -132,42 +135,4 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 	}
 }
 func buncheras(rwr http.ResponseWriter, req *http.Request) {
-	telo, err := io.ReadAll(req.Body)
-	if err != nil {
-		rwr.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	buf := bytes.NewBuffer(telo)
-	memor := []dbaser.Metrics{}
-	err = json.NewDecoder(buf).Decode(&memor)
-	if err != nil {
-		rwr.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if MetricBaseStruct.IsBase {
-		err = dbaser.TableBuncherWrapper(dbaser.TableBuncher)(&MetricBaseStruct, memor)
-		if err != nil {
-			log.Printf("%-v", err)
-		}
-	}
-	memStor.Mutter.Lock()
-	for _, m := range memor {
-		switch m.MType {
-		case "gauge":
-			memStor.Gaugemetr[m.ID] = gauge(*m.Value)
-		case "counter":
-			if _, ok := memStor.Countmetr[m.ID]; ok {
-				memStor.Countmetr[m.ID] += counter(*m.Delta)
-				continue
-			}
-			memStor.Countmetr[m.ID] = counter(*m.Delta)
-
-		default:
-			log.Printf("wrong metric type %s\n", m.MType)
-		}
-	}
-	memStor.Mutter.Unlock()
-
-	json.NewEncoder(rwr).Encode(&memor)
-
 }

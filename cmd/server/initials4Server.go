@@ -80,19 +80,18 @@ func foa4Server() error {
 		dbEndPoint = dbFlag
 	}
 	if dbEndPoint == "" {
-		//	isBase = false
 		log.Println("No base in Env variable and command line argument")
 		return nil
 	}
 	ctx := context.Background()
 	mb, err := pgx.Connect(ctx, dbEndPoint)
-	//	mb.PgConn().
 	MetricBaseStruct = dbaser.Struct4db{MetricBase: mb, Ctx: ctx, IsBase: false}
 	if err != nil {
 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
 		return nil
 	}
 	err = dbaser.TableCreation(&MetricBaseStruct)
+	//	err = dbaser.TableCreation(ctx, MetricBaseStruct.MetricBase)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create tables: %v\n", err)
 		return nil

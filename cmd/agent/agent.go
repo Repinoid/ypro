@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand/v2"
-	"net/http"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -78,62 +76,18 @@ func getMetrix(memStor *MemStorage) error {
 	return nil
 }
 
-func postMetric(metricType, metricName, metricValue string) error {
-	var metr Metrics
-	switch metricType {
-	case "counter":
-		val, err := strconv.ParseInt(metricValue, 10, 64)
-		if err != nil {
-			return fmt.Errorf("wrong counter value %w", err)
-		}
-		metr = Metrics{
-			ID:    metricName,
-			MType: metricType,
-			Delta: &val,
-		}
-	case "gauge":
-		val, err := strconv.ParseFloat(metricValue, 64)
-		if err != nil {
-			return fmt.Errorf("wrong gauge value %w", err)
-		}
-		metr = Metrics{
-			ID:    metricName,
-			MType: metricType,
-			Value: &val,
-		}
-	default:
-		return fmt.Errorf("wrong metric type")
-	}
-	march, err := json.Marshal(metr)
-	if err != nil {
-		return fmt.Errorf("could not marshal metr %w", err)
-	}
-	resp, err := http.Post("http://"+host+"/update/", "application/json", bytes.NewBuffer(march))
-	if err != nil {
-		return fmt.Errorf("could not post %w", err)
-	}
-	defer resp.Body.Close()
-
-	return nil
-}
-
 func main() {
+	if err := foa4Agent(); err != nil {
+		log.Fatal("INTERVAL error ", err)
+		return
+	}
 	if err := run(); err != nil {
 		panic(err)
 	}
 }
 
 func run() error {
-	memStor := MemStorage{}
-	err := getMetrix(&memStor)
-	if err != nil {
-		log.Println(err, "getMetrix")
-	}
-	// bunch := makeBunchOfMetrics(&memStor)
-	// err = postBunch(bunch)
-	// if err != nil {
-	// 	log.Println(err, "postbunch")
-	// }
+	memStor := MemStorage{} //memStor := new(MemStorage)
 	for {
 		cunt := 0
 		for i := 0; i < reportInterval/pollInterval; i++ {
@@ -145,14 +99,18 @@ func run() error {
 			}
 			time.Sleep(time.Duration(pollInterval) * time.Second)
 		}
+
+		memStor.count["PollCount"] = counter(cunt)
 		bunch := makeBunchOfMetrics(&memStor)
-		postBunch(bunch)
+		log.Println(len(bunch))
+
+		err := postBunch(bunch)
 		if err != nil {
 			log.Printf("AGENT postBunch ERROR %+v\n", err)
 		}
 	}
-	//return nil
 }
+
 func postBunch(bunch []Metrics) error {
 	marshalledBunch, err := json.Marshal(bunch)
 	if err != nil {
@@ -163,17 +121,17 @@ func postBunch(bunch []Metrics) error {
 		return err
 	}
 	httpc := resty.New() //
-	httpc.SetBaseURL("http://localhost:8080")
+	httpc.SetBaseURL("http://" + host)
 
 	httpc.SetRetryCount(3)
 	httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
 	httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
-	tn := time.Now()                           // -------------
+	//tn := time.Now()                           // -------------
 	httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
 		rwt := client.RetryWaitTime
-		fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
+		//	fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
 		client.SetRetryWaitTime(rwt + 2*time.Second)
-		tn = time.Now() // ----------------
+		//	tn = time.Now() // ----------------
 		return client.RetryWaitTime, nil
 	})
 
@@ -182,11 +140,11 @@ func postBunch(bunch []Metrics) error {
 		SetBody(compressedBunch).
 		SetHeader("Accept-Encoding", "gzip")
 
-	resp, err := req.
+	_, err = req.
 		SetDoNotParseResponse(false).
-		Post("/updates")
+		Post("/updates/")
 
-	fmt.Printf("%+v\n", resp)
+		//	log.Printf("%+v\n", resp)
 
 	return err
 }
@@ -194,14 +152,14 @@ func postBunch(bunch []Metrics) error {
 func makeBunchOfMetrics(memStor *MemStorage) []Metrics {
 	metrArray := make([]Metrics, 0, len(memStor.gau)+len(memStor.count))
 
-	for metrName, metrValue := range memStor.gau {
-		mval := float64(metrValue)
-		metr := Metrics{ID: metrName, MType: "gauge", Value: &mval}
-		metrArray = append(metrArray, metr)
-	}
 	for metrName, metrValue := range memStor.count {
 		mval := int64(metrValue)
 		metr := Metrics{ID: metrName, MType: "counter", Delta: &mval}
+		metrArray = append(metrArray, metr)
+	}
+	for metrName, metrValue := range memStor.gau {
+		mval := float64(metrValue)
+		metr := Metrics{ID: metrName, MType: "gauge", Value: &mval}
 		metrArray = append(metrArray, metr)
 	}
 	return metrArray

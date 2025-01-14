@@ -1,2 +1,2 @@
-{"Gaugemetr":{"nam":77},"Countmetr":{}}
+{"Gaugemetr":{},"Countmetr":{}}
 
