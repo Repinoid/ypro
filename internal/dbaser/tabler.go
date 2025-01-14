@@ -71,29 +71,42 @@ func TableCreation(MetricBaseStruct *Struct4db) error {
 	return nil
 }
 
-func TablePutCounter(MetricBaseStruct *Struct4db, metr *Metrics) error {
-	order := fmt.Sprintf("INSERT INTO Counter(metricname, value) VALUES ('%[1]s',%[2]d);", metr.ID, *metr.Delta)
-	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
-	if err == nil {
-		return nil
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code != pgerrcode.UniqueViolation {
-		return fmt.Errorf("error Insert %+v. TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
-			metr, tag1.String(), pgErr, err)
-	}
-	order = fmt.Sprintf("UPDATE Counter SET value=value+%[2]d WHERE metricname='%[1]s'", metr.ID, *metr.Delta)
-	tag2, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("error UPDATE %+v. TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
-		metr, tag1.String(), tag2.String(), err)
-}
+// func TablePutCounter(MetricBaseStruct *Struct4db, metr *Metrics) error {
+// 	order := fmt.Sprintf("INSERT INTO Counter(metricname, value) VALUES ('%[1]s',%[2]d);", metr.ID, *metr.Delta)
+// 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+// 	if err == nil {
+// 		return nil
+// 	}
+// 	var pgErr *pgconn.PgError
+// 	if errors.As(err, &pgErr) && pgErr.Code != pgerrcode.UniqueViolation {
+// 		return fmt.Errorf("error Insert %+v. TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
+// 			metr, tag1.String(), pgErr, err)
+// 	}
+// 	order = fmt.Sprintf("UPDATE Counter SET value=value+%[2]d WHERE metricname='%[1]s'", metr.ID, *metr.Delta)
+// 	tag2, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+// 	if err == nil {
+// 		return nil
+// 	}
+// 	return fmt.Errorf("error UPDATE %+v. TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
+// 		metr, tag1.String(), tag2.String(), err)
+// }
 
-func TablePutGauge(MetricBaseStruct *Struct4db, metr *Metrics) error {
-	order := fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]g);", metr.ID, *metr.Value)
-	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+func TablePutMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
+	//	(X || Y) && !(X && Y)
+	XoR := (metr.Value == nil && metr.Delta == nil) || (metr.Value != nil && metr.Delta != nil)
+	if XoR {
+		return fmt.Errorf("metr.Value %v & metr.Delta %v have both nil/notnil values - impossible %v", metr.Value, metr.Delta)
+	}
+	var orderInsert, orderUpdate string
+	if metr.Value != nil { // GAUGE case
+		orderInsert = fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]g);", metr.ID, *metr.Value)
+		orderUpdate = fmt.Sprintf("UPDATE Gauge SET value=%[2]g WHERE metricname='%[1]s'", metr.ID, *metr.Value)
+	} else { // COUNTER case
+		orderInsert = fmt.Sprintf("INSERT INTO counter(metricname, value) VALUES ('%[1]s',%[2]d);", metr.ID, *metr.Delta)
+		// for COUNTERs value=value+%[2]d !!!!
+		orderUpdate = fmt.Sprintf("UPDATE counter SET value=value+%[2]d WHERE metricname='%[1]s'", metr.ID, *metr.Delta)
+	}
+	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, orderInsert)
 	if err == nil {
 		return nil
 	}
@@ -102,15 +115,34 @@ func TablePutGauge(MetricBaseStruct *Struct4db, metr *Metrics) error {
 		return fmt.Errorf("error Insert %+v TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
 			metr, tag1.String(), pgErr, err)
 	}
-
-	order = fmt.Sprintf("UPDATE Gauge SET value=%[2]g WHERE metricname='%[1]s'", metr.ID, *metr.Value)
-	tag2, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+	tag2, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, orderUpdate)
 	if err == nil {
 		return nil
 	}
 	return fmt.Errorf("error UPDATE %+v TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
 		metr, tag1.String(), tag2.String(), err)
 }
+
+// func TablePutGauge0(MetricBaseStruct *Struct4db, metr *Metrics) error {
+// 	order := fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]g);", metr.ID, *metr.Value)
+// 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+// 	if err == nil {
+// 		return nil
+// 	}
+// 	var pgErr *pgconn.PgError
+// 	if errors.As(err, &pgErr) && pgErr.Code != pgerrcode.UniqueViolation {
+// 		return fmt.Errorf("error Insert %+v TagInsert is \"%s\" *pgconn.PgError %+v error is %w",
+// 			metr, tag1.String(), pgErr, err)
+// 	}
+
+// 	order = fmt.Sprintf("UPDATE Gauge SET value=%[2]g WHERE metricname='%[1]s'", metr.ID, *metr.Value)
+// 	tag2, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
+// 	if err == nil {
+// 		return nil
+// 	}
+// 	return fmt.Errorf("error UPDATE %+v TagInsert is \"%s\" TagUpdate is \"%s\" error is %w",
+// 		metr, tag1.String(), tag2.String(), err)
+// }
 
 func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
 	str := fmt.Sprintf("SELECT value FROM %s WHERE metricname = $1;", metr.MType)
@@ -131,7 +163,6 @@ func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
 	}
 	return nil
 }
-
 
 type Gauge float64
 type Counter int64
