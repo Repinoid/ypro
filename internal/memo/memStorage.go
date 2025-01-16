@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"internal/dbaser"
+	"os"
 	"sync"
 
-	"os"
+	"app/internal/dbaser"
 )
 
 type Metrics struct {

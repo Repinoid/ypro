@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"internal/dbaser"
+	"app/internal/dbaser"
 	"log"
 	"os"
 	"strconv"

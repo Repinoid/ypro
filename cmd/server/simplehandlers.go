@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"internal/dbaser"
-	"internal/memo"
+	"app/internal/dbaser"
+	"app/internal/memo"
 	"log"
 	"net/http"
 	"strconv"

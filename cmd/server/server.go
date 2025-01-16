@@ -18,9 +18,9 @@ import (
 	"net/http"
 	"time"
 
-	"internal/dbaser"
-	"internal/memo"
-	"internal/middles"
+	"app/internal/dbaser"
+	"app/internal/memo"
+	"app/internal/middles"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
