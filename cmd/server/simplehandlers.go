@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"app/internal/dbaser"
 	"app/internal/memo"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -45,9 +46,9 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		rwr.WriteHeader(http.StatusOK)
 		return
 	}
-
-	memStor.Mutter.RLock() // <---- MUTEX
-	defer memStor.Mutter.RUnlock()
+	var mutter sync.RWMutex
+	mutter.RLock() // <---- MUTEX
+	defer mutter.RUnlock()
 	for nam, val := range memStor.Gaugemetr {
 		flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
 		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)

@@ -19,7 +19,7 @@ type Metrics = models.Metrics
 type MemStorage struct {
 	Gaugemetr map[string]gauge
 	Countmetr map[string]counter
-	Mutter    sync.RWMutex
+	mutter    sync.RWMutex
 }
 
 func AddGauge(memorial *MemStorage, baza dbaser.StructForDB, name string, value gauge) error {
@@ -31,8 +31,8 @@ func AddGauge(memorial *MemStorage, baza dbaser.StructForDB, name string, value 
 			return fmt.Errorf("AddGauge err name %s value %g baza %+v err %w\n", name, value, baza, err)
 		}
 	}
-	memorial.Mutter.Lock()
-	defer memorial.Mutter.Unlock()
+	memorial.mutter.Lock()
+	defer memorial.mutter.Unlock()
 	memorial.Gaugemetr[name] = value
 	return nil
 }
@@ -45,8 +45,8 @@ func AddCounter(memorial *MemStorage, baza dbaser.StructForDB, name string, valu
 			return fmt.Errorf("AddCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 		}
 	}
-	memorial.Mutter.Lock()
-	defer memorial.Mutter.Unlock()
+	memorial.mutter.Lock()
+	defer memorial.mutter.Unlock()
 	if _, ok := memorial.Countmetr[name]; ok {
 		memorial.Countmetr[name] += value
 		return nil
@@ -66,8 +66,8 @@ func GetCounterValue(memorial *MemStorage, baza dbaser.StructForDB, name string,
 		}
 		return fmt.Errorf("GetCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 	}
-	memorial.Mutter.RLock() // <---- MUTEX
-	defer memorial.Mutter.RUnlock()
+	memorial.mutter.RLock() // <---- MUTEX
+	defer memorial.mutter.RUnlock()
 	if _, ok := memorial.Countmetr[name]; ok {
 		*value = memorial.Countmetr[name]
 		return nil
@@ -88,8 +88,8 @@ func GetGaugeValue(memorial *MemStorage, baza dbaser.StructForDB, name string, v
 		}
 		return fmt.Errorf("GetGauge err name %s value %d baza %+v err %w\n", name, value, baza, err)
 	}
-	memorial.Mutter.RLock() // <---- MUTEX
-	defer memorial.Mutter.RUnlock()
+	memorial.mutter.RLock() // <---- MUTEX
+	defer memorial.mutter.RUnlock()
 	if _, ok := memorial.Gaugemetr[name]; ok {
 		*value = memorial.Gaugemetr[name]
 		return nil
@@ -108,21 +108,21 @@ func (memorial *MemStorage) UnmarshalMS(data []byte) error {
 		Countmetr: make(map[string]counter),
 	}
 	buf := bytes.NewBuffer(data)
-	memorial.Mutter.Lock()
+	memorial.mutter.Lock()
 	err := json.NewDecoder(buf).Decode(&memor)
 	memorial.Gaugemetr = memor.Gaugemetr
 	memorial.Countmetr = memor.Countmetr
-	memorial.Mutter.Unlock()
+	memorial.mutter.Unlock()
 	return err
 }
 func (memorial *MemStorage) MarshalMS() ([]byte, error) {
 	buf := new(bytes.Buffer)
-	memorial.Mutter.RLock()
+	memorial.mutter.RLock()
 	err := json.NewEncoder(buf).Encode(MStorJSON{
 		Gaugemetr: memorial.Gaugemetr,
 		Countmetr: memorial.Countmetr,
 	})
-	memorial.Mutter.RUnlock()
+	memorial.mutter.RUnlock()
 	return append(buf.Bytes(), '\n'), err
 }
 

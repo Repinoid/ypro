@@ -1,14 +1,16 @@
 package main
 
 import (
+	"app/internal/dbaser"
+	"app/internal/memo"
+	"app/internal/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"app/internal/dbaser"
-	"app/internal/memo"
 	"io"
 	"log"
 	"net/http"
+	"sync"
 )
 
 func getJSONMetric(rwr http.ResponseWriter, req *http.Request) {
@@ -110,7 +112,6 @@ func treatJSONMetric(rwr http.ResponseWriter, req *http.Request) {
 		}
 		rwr.WriteHeader(http.StatusOK)
 
-
 		memo.AddGauge(&memStor, MetricBaseStruct, metricName, gauge(*metricValue))
 		// get new value from memstorage
 		var gaaga gauge
@@ -138,7 +139,7 @@ func buncheras(rwr http.ResponseWriter, req *http.Request) {
 		return
 	}
 	buf := bytes.NewBuffer(telo)
-	memor := []dbaser.Metrics{}
+	memor := []models.Metrics{}
 	err = json.NewDecoder(buf).Decode(&memor)
 	if err != nil {
 		rwr.WriteHeader(http.StatusBadRequest)
@@ -150,7 +151,8 @@ func buncheras(rwr http.ResponseWriter, req *http.Request) {
 			log.Printf("%-v", err)
 		}
 	}
-	memStor.Mutter.Lock()
+	var mutter sync.RWMutex
+	mutter.Lock()
 	for _, m := range memor {
 		switch m.MType {
 		case "gauge":
@@ -166,7 +168,7 @@ func buncheras(rwr http.ResponseWriter, req *http.Request) {
 			log.Printf("wrong metric type %s\n", m.MType)
 		}
 	}
-	memStor.Mutter.Unlock()
+	mutter.Unlock()
 
 	json.NewEncoder(rwr).Encode(&memor)
 
