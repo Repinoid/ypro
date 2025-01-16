@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	//	"log"
+	"app/internal/models"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
@@ -71,7 +71,7 @@ func TableCreation(MetricBaseStruct *StructForDB) error {
 	return nil
 }
 
-func TablePutCounter(MetricBaseStruct *StructForDB, metr *Metrics) error {
+func TablePutCounter(MetricBaseStruct *StructForDB, metr *models.Metrics) error {
 	order := fmt.Sprintf("INSERT INTO Counter(metricname, value) VALUES ('%[1]s',%[2]d);", metr.ID, *metr.Delta)
 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
 	if err == nil {
@@ -91,7 +91,7 @@ func TablePutCounter(MetricBaseStruct *StructForDB, metr *Metrics) error {
 		metr, tag1.String(), tag2.String(), err)
 }
 
-func TablePutGauge(MetricBaseStruct *StructForDB, metr *Metrics) error {
+func TablePutGauge(MetricBaseStruct *StructForDB, metr *models.Metrics) error {
 	order := fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]g);", metr.ID, *metr.Value)
 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
 	if err == nil {
@@ -112,7 +112,7 @@ func TablePutGauge(MetricBaseStruct *StructForDB, metr *Metrics) error {
 		metr, tag1.String(), tag2.String(), err)
 }
 
-func TableGetMetric(MetricBaseStruct *StructForDB, metr *Metrics) error {
+func TableGetMetric(MetricBaseStruct *StructForDB, metr *models.Metrics) error {
 	str := fmt.Sprintf("SELECT value FROM %s WHERE metricname = $1;", metr.MType)
 	row := MetricBaseStruct.MetricBase.QueryRow(MetricBaseStruct.Ctx, str, metr.ID)
 	switch metr.MType {
@@ -132,16 +132,7 @@ func TableGetMetric(MetricBaseStruct *StructForDB, metr *Metrics) error {
 	return nil
 }
 
-type Gauge float64
-type Counter int64
-type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
-}
-
-func TableBuncher(MetricBaseStruct *StructForDB, metrArray []Metrics) error {
+func TableBuncher(MetricBaseStruct *StructForDB, metrArray []models.Metrics) error {
 	tx, err := MetricBaseStruct.MetricBase.Begin(MetricBaseStruct.Ctx)
 	if err != nil {
 		return fmt.Errorf("error db.Begin  %[1]w", err)

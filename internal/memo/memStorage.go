@@ -9,19 +9,13 @@ import (
 	"sync"
 
 	"app/internal/dbaser"
+	"app/internal/models"
 )
 
-type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
-}
+type gauge = models.Gauge
+type counter = models.Counter
+type Metrics = models.Metrics
 
-type Gauge float64
-type Counter int64
-type gauge = Gauge
-type counter = Counter
 type MemStorage struct {
 	Gaugemetr map[string]gauge
 	Countmetr map[string]counter

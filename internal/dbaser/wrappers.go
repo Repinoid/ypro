@@ -1,12 +1,16 @@
 package dbaser
 
-import "time"
+import (
+	"app/internal/models"
+	"time"
+)
 
 var AttemptDelays = []int{1, 3, 5}
 
 type MetricValueTypes interface {
 	int64 | float64
 }
+type Metrics = models.Metrics
 
 func TableMetricWrapper(origFunc func(MetricBaseStruct *StructForDB, metr *Metrics) error) func(MetricBaseStruct *StructForDB, metr *Metrics) error {
 	wrappedFunc := func(MetricBaseStruct *StructForDB, metr *Metrics) error {

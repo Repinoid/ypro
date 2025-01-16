@@ -21,6 +21,7 @@ import (
 	"app/internal/dbaser"
 	"app/internal/memo"
 	"app/internal/middles"
+	"app/internal/models"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -28,8 +29,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type gauge = memo.Gauge
-type counter = memo.Counter
+type gauge = models.Gauge
+type counter = models.Counter
 type MemStorage = memo.MemStorage
 
 type Metrics struct {
