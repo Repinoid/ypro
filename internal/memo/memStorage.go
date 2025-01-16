@@ -28,11 +28,11 @@ type MemStorage struct {
 	Mutter    sync.RWMutex
 }
 
-func AddGauge(memorial *MemStorage, baza dbaser.DBstruct, name string, value gauge) error {
+func AddGauge(memorial *MemStorage, baza dbaser.Struct4db, name string, value gauge) error {
 	if baza.IsBase {
 		valadr := float64(value)
 		metro := dbaser.Metrics{ID: name, MType: "counter", Value: &valadr}
-		err := dbaser.TableMetricWrapper(dbaser.TablePutMetric)(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TablePutGauge)(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddGauge err name %s value %g baza %+v err %w\n", name, value, baza, err)
 		}
@@ -42,11 +42,11 @@ func AddGauge(memorial *MemStorage, baza dbaser.DBstruct, name string, value gau
 	memorial.Gaugemetr[name] = value
 	return nil
 }
-func AddCounter(memorial *MemStorage, baza dbaser.DBstruct, name string, value counter) error {
+func AddCounter(memorial *MemStorage, baza dbaser.Struct4db, name string, value counter) error {
 	if baza.IsBase {
 		valadr := int64(value)
 		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &valadr}
-		err := dbaser.TableMetricWrapper(dbaser.TablePutMetric)(&baza, &metro)
+		err := dbaser.TableMetricWrapper(dbaser.TablePutCounter)(&baza, &metro)
 		if err != nil {
 			return fmt.Errorf("AddCounter err name %s value %d baza %+v err %w\n", name, value, baza, err)
 		}
@@ -60,7 +60,7 @@ func AddCounter(memorial *MemStorage, baza dbaser.DBstruct, name string, value c
 	memorial.Countmetr[name] = value
 	return nil
 }
-func GetCounterValue(memorial *MemStorage, baza dbaser.DBstruct, name string, value *counter) error {
+func GetCounterValue(memorial *MemStorage, baza dbaser.Struct4db, name string, value *counter) error {
 	if baza.IsBase {
 		var cunt int64
 		metro := dbaser.Metrics{ID: name, MType: "counter", Delta: &cunt}
@@ -80,7 +80,7 @@ func GetCounterValue(memorial *MemStorage, baza dbaser.DBstruct, name string, va
 	}
 	return fmt.Errorf("no %s key", name)
 }
-func GetGaugeValue(memorial *MemStorage, baza dbaser.DBstruct, name string, value *gauge) error {
+func GetGaugeValue(memorial *MemStorage, baza dbaser.Struct4db, name string, value *gauge) error {
 	if baza.IsBase {
 		var gaaga float64
 		//		var gaaga float64

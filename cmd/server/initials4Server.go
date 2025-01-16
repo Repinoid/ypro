@@ -85,7 +85,7 @@ func foa4Server() error {
 	}
 	ctx := context.Background()
 	mb, err := pgx.Connect(ctx, dbEndPoint)
-	MetricBaseStruct = dbaser.DBstruct{MetricBase: mb, Ctx: ctx, IsBase: false}
+	MetricBaseStruct = dbaser.Struct4db{MetricBase: mb, Ctx: ctx, IsBase: false}
 	if err != nil {
 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
 		return nil
