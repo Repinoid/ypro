@@ -43,7 +43,7 @@ var memStor MemStorage
 var host = "localhost:8080"
 var sugar zap.SugaredLogger
 
-var MetricBaseStruct dbaser.Struct4db
+var MetricBaseStruct dbaser.StructForDB
 
 func saver(memStor *MemStorage, fnam string) error {
 

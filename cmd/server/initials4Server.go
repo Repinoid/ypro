@@ -1,10 +1,10 @@
 package main
 
 import (
+	"app/internal/dbaser"
 	"context"
 	"flag"
 	"fmt"
-	"app/internal/dbaser"
 	"log"
 	"os"
 	"strconv"
@@ -85,7 +85,7 @@ func foa4Server() error {
 	}
 	ctx := context.Background()
 	mb, err := pgx.Connect(ctx, dbEndPoint)
-	MetricBaseStruct = dbaser.Struct4db{MetricBase: mb, Ctx: ctx, IsBase: false}
+	MetricBaseStruct = dbaser.StructForDB{MetricBase: mb, Ctx: ctx, IsBase: false}
 	if err != nil {
 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
 		return nil

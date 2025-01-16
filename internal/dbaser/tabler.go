@@ -12,13 +12,13 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type Struct4db struct {
+type StructForDB struct {
 	Ctx        context.Context
 	IsBase     bool
 	MetricBase *pgx.Conn
 }
 
-func TableGetAllCounters(MetricBaseStruct *Struct4db, mappa *map[string]int64) error {
+func TableGetAllCounters(MetricBaseStruct *StructForDB, mappa *map[string]int64) error {
 	var inta int64
 	var str string
 	zapros := "SELECT * FROM counter;"
@@ -37,7 +37,7 @@ func TableGetAllCounters(MetricBaseStruct *Struct4db, mappa *map[string]int64) e
 	}
 	return nil
 }
-func TableGetAllGauges(MetricBaseStruct *Struct4db, mappa *map[string]float64) error {
+func TableGetAllGauges(MetricBaseStruct *StructForDB, mappa *map[string]float64) error {
 	var flo float64
 	var str string
 	zapros := "SELECT * FROM gauge;"
@@ -57,7 +57,7 @@ func TableGetAllGauges(MetricBaseStruct *Struct4db, mappa *map[string]float64) e
 	return nil
 }
 
-func TableCreation(MetricBaseStruct *Struct4db) error {
+func TableCreation(MetricBaseStruct *StructForDB) error {
 	crea := "CREATE TABLE IF NOT EXISTS Gauge(metricname VARCHAR(30) PRIMARY KEY, value FLOAT8);"
 	tag, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, crea)
 	if err != nil {
@@ -71,7 +71,7 @@ func TableCreation(MetricBaseStruct *Struct4db) error {
 	return nil
 }
 
-func TablePutCounter(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TablePutCounter(MetricBaseStruct *StructForDB, metr *Metrics) error {
 	order := fmt.Sprintf("INSERT INTO Counter(metricname, value) VALUES ('%[1]s',%[2]d);", metr.ID, *metr.Delta)
 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
 	if err == nil {
@@ -91,7 +91,7 @@ func TablePutCounter(MetricBaseStruct *Struct4db, metr *Metrics) error {
 		metr, tag1.String(), tag2.String(), err)
 }
 
-func TablePutGauge(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TablePutGauge(MetricBaseStruct *StructForDB, metr *Metrics) error {
 	order := fmt.Sprintf("INSERT INTO Gauge(metricname, value) VALUES ('%[1]s',%[2]g);", metr.ID, *metr.Value)
 	tag1, err := MetricBaseStruct.MetricBase.Exec(MetricBaseStruct.Ctx, order)
 	if err == nil {
@@ -112,7 +112,7 @@ func TablePutGauge(MetricBaseStruct *Struct4db, metr *Metrics) error {
 		metr, tag1.String(), tag2.String(), err)
 }
 
-func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
+func TableGetMetric(MetricBaseStruct *StructForDB, metr *Metrics) error {
 	str := fmt.Sprintf("SELECT value FROM %s WHERE metricname = $1;", metr.MType)
 	row := MetricBaseStruct.MetricBase.QueryRow(MetricBaseStruct.Ctx, str, metr.ID)
 	switch metr.MType {
@@ -132,7 +132,6 @@ func TableGetMetric(MetricBaseStruct *Struct4db, metr *Metrics) error {
 	return nil
 }
 
-
 type Gauge float64
 type Counter int64
 type Metrics struct {
@@ -142,7 +141,7 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func TableBuncher(MetricBaseStruct *Struct4db, metrArray []Metrics) error {
+func TableBuncher(MetricBaseStruct *StructForDB, metrArray []Metrics) error {
 	tx, err := MetricBaseStruct.MetricBase.Begin(MetricBaseStruct.Ctx)
 	if err != nil {
 		return fmt.Errorf("error db.Begin  %[1]w", err)
