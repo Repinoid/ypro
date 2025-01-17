@@ -85,18 +85,19 @@ func main() {
 func run() error {
 
 	router := mux.NewRouter()
-	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", middles.WithLogging(treatMetric)).Methods("POST")
-	router.HandleFunc("/update/", middles.WithLogging(treatJSONMetric)).Methods("POST")
-	router.HandleFunc("/updates/", middles.WithLogging(buncheras)).Methods("POST")
-	router.HandleFunc("/value/{metricType}/{metricName}", middles.WithLogging(getMetric)).Methods("GET")
-	router.HandleFunc("/value/", middles.WithLogging(getJSONMetric)).Methods("POST")
-	router.HandleFunc("/", middles.WithLogging(getAllMetrix)).Methods("GET")
-	router.HandleFunc("/", middles.WithLogging(badPost)).Methods("POST") // if POST with wrong arguments structure
-	router.HandleFunc("/ping", middles.WithLogging(dbPinger)).Methods("GET")
+	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", treatMetric).Methods("POST")
+	router.HandleFunc("/update/", treatJSONMetric).Methods("POST")
+	router.HandleFunc("/updates/", buncheras).Methods("POST")
+	router.HandleFunc("/value/{metricType}/{metricName}", getMetric).Methods("GET")
+	router.HandleFunc("/value/", getJSONMetric).Methods("POST")
+	router.HandleFunc("/", getAllMetrix).Methods("GET")
+	router.HandleFunc("/", badPost).Methods("POST") // if POST with wrong arguments structure
+	router.HandleFunc("/ping", dbPinger).Methods("GET")
 	router.HandleFunc("/ping", dbPinger).Methods("GET")
 
 	router.Use(middles.GzipHandleEncoder)
 	router.Use(middles.GzipHandleDecoder)
+	router.Use(middles.WithLogging)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
