@@ -1,10 +1,10 @@
 package main
 
 import (
-	"app/internal/dbaser"
 	"context"
 	"flag"
 	"fmt"
+	"gorono/internal/basis"
 	"log"
 	"os"
 	"strconv"
@@ -17,7 +17,7 @@ var fileStorePath = "./goshran.txt"
 var reStore = true
 var dbEndPoint = ""
 
-func foa4Server() error {
+func InitServer() error {
 	hoster, exists := os.LookupEnv("ADDRESS")
 	if exists {
 		host = hoster
@@ -79,24 +79,36 @@ func foa4Server() error {
 	if _, exists := os.LookupEnv("DATABASE_DSN"); !exists {
 		dbEndPoint = dbFlag
 	}
+	memStor = &MemStorage{
+		Gaugemetr: make(map[string]gauge),
+		Countmetr: make(map[string]counter),
+		Mutter:    &mtx,
+	}
 	if dbEndPoint == "" {
 		log.Println("No base in Env variable and command line argument")
+		inter = memStor // если базы нет, подключаем in memory Storage
 		return nil
 	}
-	ctx := context.Background()
-	mb, err := pgx.Connect(ctx, dbEndPoint)
-	MetricBaseStruct = dbaser.StructForDB{MetricBase: mb, Ctx: ctx, IsBase: false}
+	ctx = context.Background()
+	err := startDB(ctx, dbEndPoint)
 	if err != nil {
+		inter = memStor // если не удаётся подключиться к базе, подключаем in memory Storage
 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
 		return nil
 	}
-	err = dbaser.TableCreation(&MetricBaseStruct)
-	//	err = dbaser.TableCreation(ctx, MetricBaseStruct.MetricBase)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to create tables: %v\n", err)
-		return nil
-	}
-	MetricBaseStruct.IsBase = true
+	inter = dbStorage // data base as Metric Storage
+	return nil
+}
 
+func startDB(ctx context.Context, dbEndPoint string) error {
+	baza, err := pgx.Connect(ctx, dbEndPoint)
+	if err != nil {
+		return fmt.Errorf("can't connect to DB %s err %w", dbEndPoint, err)
+	}
+	dbStorage.DB = baza
+	err = basis.TableCreation(ctx, dbStorage.DB)
+	if err != nil {
+		return fmt.Errorf("can't create tables in DB %s err %w", dbEndPoint, err)
+	}
 	return nil
 }

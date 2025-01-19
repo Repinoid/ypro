@@ -1,10 +1,9 @@
 package main
 
 import (
-	"app/internal/dbaser"
-	"app/internal/memo"
 	"fmt"
-	"log"
+	"gorono/internal/basis"
+	"gorono/internal/models"
 	"net/http"
 	"strconv"
 	"sync"
@@ -25,74 +24,56 @@ func getAllMetrix(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
-	if MetricBaseStruct.IsBase {
-		mGauge := map[string]float64{}
-		err := dbaser.TableGetAllsWrapper(dbaser.TableGetAllGauges)(&MetricBaseStruct, &mGauge)
-		if err != nil {
-			log.Printf("bad allgauges\n %v\n", err)
-		}
-		mCounter := map[string]int64{}
-		err = dbaser.TableGetAllsWrapper(dbaser.TableGetAllCounters)(&MetricBaseStruct, &mCounter)
-		if err != nil {
-			log.Printf("bad allcounters\n %v\n", err)
-		}
-		for nam, val := range mGauge {
-			flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
-			fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
-		}
-		for nam, val := range mCounter {
-			fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
-		}
-		rwr.WriteHeader(http.StatusOK)
-		return
-	}
 	var mutter sync.RWMutex
 	mutter.RLock() // <---- MUTEX
 	defer mutter.RUnlock()
-	for nam, val := range memStor.Gaugemetr {
-		flo := strconv.FormatFloat(float64(val), 'f', -1, 64) // -1 - to remove zeroes tail
-		fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", nam, flo)
+
+	metras, err := basis.GetAllMetricsWrapper(inter.GetAllMetrics)(ctx)
+	if err != nil {
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
+		return
 	}
-	for nam, val := range memStor.Countmetr {
-		fmt.Fprintf(rwr, "Counter Metric name %20s\t\tvalue\t%d\n", nam, val)
-	}
+
 	rwr.WriteHeader(http.StatusOK)
+	for _, metr := range *metras {
+		switch metr.MType {
+		case "gauge":
+			flo := strconv.FormatFloat(float64(*metr.Value), 'f', -1, 64) // -1 - to remove zeroes tail
+			fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%s\n", metr.ID, flo)
+		case "counter":
+			fmt.Fprintf(rwr, "Gauge Metric name   %20s\t\tvalue\t%d\n", metr.ID, *metr.Delta)
+		}
+	}
 }
+
 func getMetric(rwr http.ResponseWriter, req *http.Request) {
 	rwr.Header().Set("Content-Type", "text/html")
 	vars := mux.Vars(req)
 	metricType := vars["metricType"]
 	metricName := vars["metricName"]
-	switch metricType {
-	case "counter":
-		var cunt counter
-		if memo.GetCounterValue(&memStor, MetricBaseStruct, metricName, &cunt) != nil {
-			//	if memStor.GetCounterValue(metricName, &cunt) != nil {
-			rwr.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(rwr, nil)
-			return
-		}
-		fmt.Fprint(rwr, cunt)
-	case "gauge":
-		var gaaga gauge
-		if memo.GetGaugeValue(&memStor, MetricBaseStruct, metricName, &gaaga) != nil {
-			//	if memStor.GetGaugeValue(metricName, &gaaga) != nil {
-			rwr.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(rwr, nil)
-			return
-		}
-		fmt.Fprint(rwr, gaaga)
-	default:
-		rwr.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(rwr, nil)
+	metr := models.Metrics{ID: metricName, MType: metricType}
+	metr, err := basis.GetMetricWrapper(inter.GetMetric)(ctx, &metr) //inter.GetMetric(ctx, &metr)
+	if err != nil || !models.IsMetricsOK(metr) {                     // if no such metric, type+name
+		rwr.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(rwr, `{"wrong metric name":"%s"}`, metricName)
 		return
 	}
-	rwr.WriteHeader(http.StatusOK)
+	switch metricType {
+	case "gauge":
+		rwr.WriteHeader(http.StatusOK)
+		fmt.Fprint(rwr, *metr.Value)
+	case "counter":
+		rwr.WriteHeader(http.StatusOK)
+		fmt.Fprint(rwr, *metr.Delta)
+	default:
+		rwr.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(rwr, `{"wrong metric type":"%s"}`, metricType)
+		return
+	}
 }
 
-func treatMetric(rwr http.ResponseWriter, req *http.Request) {
-
-	//log.Printf("%v\nisBase - %v\ncheck - %v\n\n\n", MetricBase.MetricBase, isBase, check)
+func putMetric(rwr http.ResponseWriter, req *http.Request) {
 
 	rwr.Header().Set("Content-Type", "text/html")
 	vars := mux.Vars(req)
@@ -104,34 +85,57 @@ func treatMetric(rwr http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(rwr, `{"status":"StatusNotFound"}`)
 		return
 	}
+	metr := models.Metrics{}
 	switch metricType {
 	case "counter":
-		value, err := strconv.ParseInt(metricValue, 10, 64)
+		out, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
-		//	memStor.AddCounter(metricName, counter(value))
-		memo.AddCounter(&memStor, MetricBaseStruct, metricName, counter(value))
+		metr = models.Metrics{ID: metricName, MType: "counter", Delta: &out}
+	//	basis.PutMetricWrapper(inter.PutMetric)(ctx, &metr) //inter.PutMetric(ctx, &metr)
 	case "gauge":
-		value, err := strconv.ParseFloat(metricValue, 64)
+		out, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			rwr.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 			return
 		}
-		//	memStor.AddGauge(metricName, gauge(value))
-		memo.AddGauge(&memStor, MetricBaseStruct, metricName, gauge(value))
+		metr = models.Metrics{ID: metricName, MType: "gauge", Value: &out}
 	default:
 		rwr.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
 		return
 	}
+	basis.PutMetricWrapper(inter.PutMetric)(ctx, &metr)              //inter.PutMetric(ctx, &metr)
+	metr, err := basis.GetMetricWrapper(inter.GetMetric)(ctx, &metr) // inter.GetMetric(ctx, &metr)
+	if err != nil {
+		rwr.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(rwr, `{"status":"StatusBadRequest"}`)
+		return
+	}
 	rwr.WriteHeader(http.StatusOK)
-	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
-
+	switch metr.MType {
+	case "gauge":
+		fmt.Fprint(rwr, *metr.Value)
+	case "counter":
+		fmt.Fprint(rwr, *metr.Delta)
+	}
 	if storeInterval == 0 {
 		_ = memStor.SaveMS(fileStorePath)
 	}
+}
+
+func dbPinger(rwr http.ResponseWriter, req *http.Request) {
+
+	err := inter.Ping(ctx)
+	if err != nil {
+		rwr.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(rwr, `{"Error":"%v"}`, err)
+		return
+	}
+	rwr.WriteHeader(http.StatusOK)
+	fmt.Fprintf(rwr, `{"status":"StatusOK"}`)
 }

@@ -1,4 +1,4 @@
-package middles
+package middlas
 
 import (
 	"compress/gzip"
