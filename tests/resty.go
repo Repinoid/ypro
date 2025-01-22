@@ -13,7 +13,9 @@ type Metrics struct {
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	ID    string   `json:"id"`              // имя метрики
 }
-var delays = []int{1,3,5}
+
+var delays = []int{1, 3, 5}
+
 // func main1() {
 func main() {
 
@@ -27,11 +29,11 @@ func main() {
 	httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
 		rwt := client.RetryWaitTime
 		fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
-		client.SetRetryWaitTime(time.Duration(delays[0])*time.Second)
+		client.SetRetryWaitTime(time.Duration(delays[0]) * time.Second)
 		if len(delays) > 1 {
 			delays = delays[1:]
 		}
-	//	client.SetRetryWaitTime(rwt + 2*time.Second)
+		//	client.SetRetryWaitTime(rwt + 2*time.Second)
 		tn = time.Now() // ----------------
 		return client.RetryWaitTime, nil
 	})
@@ -40,10 +42,11 @@ func main() {
 		SetHeader("Content-Type", "text/html").
 		SetHeader("Accept-Encoding", "gzip")
 
-		//	resp, err :=
+	//	resp, err :=
+	req.Header.Add("hzz", "WTF")
 	req.
 		SetDoNotParseResponse(false).
-		Get("/")
+		Post("/pure")
 
 	//	fmt.Printf("response - %+v\nerror %v\n", resp.Header(), err)
 }

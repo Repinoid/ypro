@@ -20,7 +20,7 @@ func main() {
 
 	router.HandleFunc("/params", params).Methods("POST")
 	router.HandleFunc("/pure", pure).Methods("POST")
-	router.HandleFunc("/updates", bunchas).Methods("POST")
+	//	router.HandleFunc("/updates", bunchas).Methods("POST")
 
 	if err := http.ListenAndServe(localPort, gzipHandle(router)); err != nil {
 		fmt.Println(err.Error())
@@ -136,5 +136,8 @@ func pure(rwr http.ResponseWriter, req *http.Request) {
 		http.Error(rwr, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	a := req.Header.Get("hzz")
+	fmt.Printf("heaaad %v\n", a)
 	rwr.Write(telo)
 }
