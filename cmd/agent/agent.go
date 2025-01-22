@@ -57,31 +57,50 @@ func postBunch(bunch []models.Metrics) error {
 	if err != nil {
 		return err
 	}
-	httpc := resty.New() //
+
+	httpc := resty.New()
 	httpc.SetBaseURL("http://" + host)
 
-	httpc.SetRetryCount(3)
-	httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
-	httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
-	//tn := time.Now()                           // -------------
-	httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-		rwt := client.RetryWaitTime
-		//	fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
-		client.SetRetryWaitTime(rwt + 2*time.Second)
-		//	tn = time.Now() // ----------------
-		return client.RetryWaitTime, nil
-	})
+	// httpc.SetRetryCount(3)
+	// httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
+	// httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
+	// //tn := time.Now()                           // -------------
+	// httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
+	// 	rwt := client.RetryWaitTime
+	// 	//	fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
+	// 	client.SetRetryWaitTime(rwt + 2*time.Second)
+	// 	//	tn = time.Now() // ----------------
+	// 	return client.RetryWaitTime, nil
+	// })
+
+	_ = compressedBunch
 
 	req := httpc.R().
-		SetHeader("Content-Encoding", "gzip"). // сжаtо
 		SetBody(compressedBunch).
+		SetHeader("Accept", "text/html").
+		SetHeader("Content-Encoding", "gzip").
+		SetHeader("Content-Type", "text/html").
 		SetHeader("Accept-Encoding", "gzip")
 
-	_, err = req.
+	req.Header.Add("hzz", "WTF")
+	req.
 		SetDoNotParseResponse(false).
-		Post("/updates/") // slash on the tile
+		Post("/updates/")
 
-		//	log.Printf("%+v\n", resp)
+	// req := httpc.R().
+	// 	SetBody(compressedBunch).
+	// 	SetHeader("Content-Encoding", "gzip"). // сжаtо
+	// 	SetHeader("Content-Type", "text/html").
+	// 	SetHeader("Accept-Encoding", "gzip")
+
+	// req.Header.Add("hzz", "WTF")
+
+	// req.
+	// //	SetBody([]byte("456789")).
+	// 	SetDoNotParseResponse(false).
+	// 	Post("/updates/") // slash on the tile
+
+	//	log.Printf("%+v\n", resp)
 
 	return err
 }

@@ -18,9 +18,15 @@ var delays = []int{1, 3, 5}
 
 // func main1() {
 func main() {
+	postal()
+	//	fmt.Printf("response - %+v\nerror %v\n", resp.Header(), err)
+}
+
+func postal() {
 
 	httpc := resty.New() //
 	httpc.SetBaseURL("http://localhost:8080")
+
 	httpc.SetRetryCount(len(delays))
 	delays = delays[1:]
 	httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
@@ -38,15 +44,14 @@ func main() {
 		return client.RetryWaitTime, nil
 	})
 	req := httpc.R().
+		SetBody("12345").
 		SetHeader("Accept", "text/html").
 		SetHeader("Content-Type", "text/html").
 		SetHeader("Accept-Encoding", "gzip")
 
-	//	resp, err :=
 	req.Header.Add("hzz", "WTF")
 	req.
 		SetDoNotParseResponse(false).
-		Post("/pure")
+		Post("/updates/")
 
-	//	fmt.Printf("response - %+v\nerror %v\n", resp.Header(), err)
 }
