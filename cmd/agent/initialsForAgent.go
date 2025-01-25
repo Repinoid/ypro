@@ -41,6 +41,7 @@ func initAgent() error {
 		}
 		return nil
 	}
+	
 
 	var hostFlag string
 	flag.StringVar(&hostFlag, "a", host, "Only -a={host:port} flag is allowed here")
