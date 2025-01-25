@@ -13,6 +13,7 @@ import (
 type gauge = models.Gauge
 type counter = models.Counter
 
+// три доп. метрики из gopsutil
 func GetMoreMetrix() *[]models.Metrics {
 	v, _ := mem.VirtualMemory() //             VirtualMemory()
 	cc, _ := cpu.Counts(true)
@@ -21,9 +22,16 @@ func GetMoreMetrix() *[]models.Metrics {
 		"FreeMemory":      gauge(v.Free),
 		"CPUutilization1": gauge(cc),
 	}
-
+	metrArray := make([]models.Metrics, 0, len(gaugeMap))
+	for metrName, metrValue := range gaugeMap {
+		mval := float64(metrValue)
+		metr := models.Metrics{ID: metrName, MType: "gauge", Value: &mval}
+		metrArray = append(metrArray, metr)
+	}
+	return &metrArray
 }
 
+// рантайм метрики из runtime.MemStats
 func GetMetrixFromOS() *[]models.Metrics {
 	var mS runtime.MemStats
 	runtime.ReadMemStats(&mS)
@@ -63,12 +71,12 @@ func GetMetrixFromOS() *[]models.Metrics {
 	metrArray := make([]models.Metrics, 0, len(gaugeMap)+len(counterMap))
 
 	for metrName, metrValue := range counterMap {
-		mval := int64(metrValue) + int64(rand.IntN(10))
+		mval := int64(metrValue)
 		metr := models.Metrics{ID: metrName, MType: "counter", Delta: &mval}
 		metrArray = append(metrArray, metr)
 	}
 	for metrName, metrValue := range gaugeMap {
-		mval := float64(metrValue) + float64(rand.IntN(10))
+		mval := float64(metrValue)
 		metr := models.Metrics{ID: metrName, MType: "gauge", Value: &mval}
 		metrArray = append(metrArray, metr)
 	}

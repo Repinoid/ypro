@@ -50,6 +50,8 @@ func metrixIN(metroBarn chan<- []models.Metrics) {
 		cunt := int64(0)
 		for i := 0; i < reportInterval/pollInterval; i++ {
 			memStorage = *memos.GetMetrixFromOS()
+			addMetrix := *memos.GetMoreMetrix()
+			memStorage = append(memStorage, addMetrix...)
 			cunt++
 			time.Sleep(time.Duration(pollInterval) * time.Second)
 		}
@@ -94,12 +96,9 @@ func bolda(metroBarn <-chan []models.Metrics) {
 		httpc.SetRetryCount(3)
 		httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
 		httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
-		//tn := time.Now()                           // -------------
 		httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
 			rwt := client.RetryWaitTime
-			//	fmt.Printf("waittime \t%+v\t time %+v  count %d\n", rwt, time.Since(tn), client.RetryCount) // -------
-			client.SetRetryWaitTime(rwt + 2*time.Second)
-			//	tn = time.Now() // ----------------
+			client.SetRetryWaitTime(rwt + 2*time.Second) //	увеличение времени ожидания на 2 сек
 			return client.RetryWaitTime, nil
 		})
 
