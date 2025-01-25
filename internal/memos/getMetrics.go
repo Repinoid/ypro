@@ -5,10 +5,24 @@ import (
 	"runtime"
 
 	"gorono/internal/models"
+
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 type gauge = models.Gauge
 type counter = models.Counter
+
+func GetMoreMetrix() *[]models.Metrics {
+	v, _ := mem.VirtualMemory() //             VirtualMemory()
+	cc, _ := cpu.Counts(true)
+	gaugeMap := map[string]gauge{
+		"TotalMemory":     gauge(v.Total),
+		"FreeMemory":      gauge(v.Free),
+		"CPUutilization1": gauge(cc),
+	}
+
+}
 
 func GetMetrixFromOS() *[]models.Metrics {
 	var mS runtime.MemStats
