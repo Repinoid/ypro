@@ -50,7 +50,6 @@ func run() error {
 		go bolda(metroBarn, fenix)	// нанимаем нового
 	}
 
-
 	// stopper := make(chan<- struct{})
 	// stopper <- struct{}{}
 	//return nil
