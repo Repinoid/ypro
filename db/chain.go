@@ -2,41 +2,35 @@ package main
 
 import "fmt"
 
-func add(inputCh chan int) chan int {
-	resultCh := make(chan int)
-	go func() {
-		defer close(resultCh)
-		for value := range inputCh {
-			resultCh <- value
-		}
-	}()
-	return resultCh
+type chaina struct {
+	ch chan int
 }
 
-func generator(numbers []int) chan int {
-	outputCh := make(chan int)
+
+func (s chaina)  add() chan int {
+	chacha := make(chan int)
 	go func() {
-		defer close(outputCh)
-		for _, num := range numbers {
-			outputCh <- num
+		defer close(chacha)
+		for value := range s.ch {
+			chacha <- value
 		}
 	}()
-	return outputCh
+	return chacha
 }
 
 func main() {
 	numbers := []int{1, 2, 3, 4, 5}
-	inputCh := make(chan int)
+	s := chaina{ch:make(chan int) }
+
 	go func() {
-		defer close(inputCh)
+		defer close(s.ch)
 		for _, num := range numbers {
-			inputCh <- num
+			s.ch <- num
 		}
 	}()
 
-	//inputCh := generator(numbers)
-
-	addCh := add(inputCh)
+	addCh := s.add()
+	
 	for res := range addCh {
 		fmt.Print(res, " ")
 	}
