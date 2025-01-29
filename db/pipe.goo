@@ -1,0 +1,57 @@
+package main
+
+import "fmt"
+
+type finout func(inputCh <-chan int, value int) chan int
+
+func main3() {
+
+	// Входные данные
+	sales := []int{10, 20, 30, 40, 50}
+	// Параметры обработки
+	threshold := 30
+	percent := 10
+	mul := 0.3
+
+	input := make(chan int)
+
+	go func() {
+		defer close(input)
+
+		for _, num := range sales {
+			input <- num
+		}
+	}()
+
+	fnks := []finout{filtering}
+
+	for _, fnk := range fnks {
+		input = fnk(input)
+	}
+	for res := range input {
+		fmt.Print(res, " ")
+	}
+
+}
+
+func filtering(inputCh <-chan int, threshold int) chan int {
+	resultCh := make(chan int)
+	go func() {
+		defer close(resultCh)
+		for value := range inputCh {
+			if value > threshold {
+				resultCh <- value
+			}
+		}
+	}()
+	return resultCh
+}
+
+func adder(in int) int {
+	//	fmt.Println("adder")
+	return in + 2
+}
+func multer(in int) int {
+	//	fmt.Println("multer")
+	return in * 2
+}
