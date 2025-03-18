@@ -4,31 +4,31 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"gorono/internal/handlera"
 	"gorono/internal/middlas"
 	"gorono/internal/models"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func Test_gzipPutGet(t *testing.T) {
-	//initForTests()
-	main.InitServer()
+//Test04Add5Users() {
+
+func (suite *TstHandlers) Test_gzipPutGet() {
+	// //initForTests()
+	// InitServer()
 	type want struct {
 		code     int
 		response string
 		//		err      error
 	}
-	controlMetric := Metrics{MType: "gauge", ID: "Alloc", Value: middlas.Ptr[float64](78)}
+	controlMetric := models.Metrics{MType: "gauge", ID: "Alloc", Value: middlas.Ptr[float64](78)}
 	cmMarshalled, _ := json.Marshal(controlMetric)
-	controlMetric1 := Metrics{MType: "gauge", ID: "Alloc", Value: middlas.Ptr[float64](77)}
+	controlMetric1 := models.Metrics{MType: "gauge", ID: "Alloc", Value: middlas.Ptr[float64](77)}
 	cmMarshalled1, _ := json.Marshal(controlMetric1)
 
-	bunch := []Metrics{controlMetric, controlMetric1}
+	bunch := []models.Metrics{controlMetric, controlMetric1}
 	bunchOnMarsh, _ := json.Marshal(bunch)
 
 	tests := []struct {
@@ -46,7 +46,7 @@ func Test_gzipPutGet(t *testing.T) {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        GetJSONMetric,
+			function:        handlera.GetJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -58,7 +58,7 @@ func Test_gzipPutGet(t *testing.T) {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        Buncheras,
+			function:        handlera.Buncheras,
 			metras:          bunch,
 			want: want{
 				code:     http.StatusOK,
@@ -70,7 +70,7 @@ func Test_gzipPutGet(t *testing.T) {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        PutJSONMetric,
+			function:        handlera.PutJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -82,7 +82,7 @@ func Test_gzipPutGet(t *testing.T) {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        GetJSONMetric,
+			function:        handlera.GetJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -107,8 +107,8 @@ func Test_gzipPutGet(t *testing.T) {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        PutJSONMetric,
-			metr: Metrics{
+			function:        handlera.PutJSONMetric,
+			metr: models.Metrics{
 				MType: "gaug",
 				ID:    "Alloc",
 				Value: middlas.Ptr[float64](77),
@@ -121,7 +121,7 @@ func Test_gzipPutGet(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
 			var march []byte
 			if tt.name == "BUNCH" {
 				march, _ = json.Marshal(tt.metras) // []Metrics
@@ -162,7 +162,7 @@ func Test_gzipPutGet(t *testing.T) {
 					log.Printf("ContentEncoding == \"gzip\" io.ReadAll %+v\n", err)
 				}
 			}
-			assert.JSONEq(t, tt.want.response, string(telo))
+			suite.Assert().JSONEq(tt.want.response, string(telo))
 
 		})
 	}
