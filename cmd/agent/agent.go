@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"log"
+	"net/http"
+	"sync/atomic"
 	"time"
 
 	"gorono/internal/memos"
@@ -19,7 +21,8 @@ var host = "localhost:8080"
 var reportInterval = 10
 var pollInterval = 2
 var key = ""
-var rate_limit = 4
+var rateLimit = 4
+var cunt int64
 
 func main() {
 	if err := initAgent(); err != nil {
@@ -35,47 +38,53 @@ func main() {
 func run() error {
 
 	const chanCap = 4
-	const rabNum = 4
 
 	metroBarn := make(chan []models.Metrics, chanCap)
 	go metrixIN(metroBarn)
 
-	for w := 1; w <= rabNum; w++ {
-		go bolda(metroBarn)
+	fenix := make(chan struct{})
+	for w := 1; w <= rateLimit; w++ {
+		go bolda(metroBarn, fenix)
 	}
-	stopper := make(chan<- struct{})
-	stopper <- struct{}{}
-	return nil
+	for {
+		fenix <- struct{}{}        // блокируем канал пока балда не прочитает из него при своём завершении по ошибке
+		go bolda(metroBarn, fenix) // нанимаем нового
+	}
 }
 
 // получает банчи метрик и складывает в barn
 func metrixIN(metroBarn chan<- []models.Metrics) {
+	memStorage := []models.Metrics{}
+	tickerPoll := time.NewTicker(time.Duration(pollInterval) * time.Second)
+	tickerReport := time.NewTicker(time.Duration(reportInterval) * time.Second)
 	for {
-		memStorage := []models.Metrics{}
-		cunt := int64(0)
-		for i := 0; i < reportInterval/pollInterval; i++ {
+		select {
+		case <-tickerPoll.C:
 			memStorage = *memos.GetMetrixFromOS()
 			addMetrix := *memos.GetMoreMetrix()
 			memStorage = append(memStorage, addMetrix...)
-			cunt++
-			time.Sleep(time.Duration(pollInterval) * time.Second)
-		}
-		for ind, metr := range memStorage {
-			if metr.ID == "PollCount" && metr.MType == "counter" {
-				memStorage[ind].Delta = &cunt // в сам memStorage, metr - копия
-				break
+			atomic.AddInt64(&cunt, 1) //			cunt++
+
+			for ind, metr := range memStorage {
+				if metr.ID == "PollCount" && metr.MType == "counter" {	// search for PollCount metric
+					cu := atomic.LoadInt64(&cunt)
+					memStorage[ind].Delta = &cu // memStorage[ind].Delta = cunt
+					break
+				}
 			}
+		case <-tickerReport.C:
+			metroBarn <- memStorage
 		}
-		metroBarn <- memStorage
 	}
 }
 
-// работник отсылает банчи метрик на сервер
-func bolda(metroBarn <-chan []models.Metrics) {
+// работник отсылает банчи метрик на сервер, феникс - канал для подачи сигнала о завершении по ошибке
+func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 	for {
 		bunch := <-metroBarn
 		marshalledBunch, err := json.Marshal(bunch)
 		if err != nil {
+			<-fenix // в случае ошибки читаем из феникса, разблокируя канал и выходим
 			return
 		}
 		var haHex string
@@ -84,6 +93,7 @@ func bolda(metroBarn <-chan []models.Metrics) {
 
 			coded, err := privacy.EncryptB2B(marshalledBunch, keyB[:])
 			if err != nil {
+				<-fenix
 				return
 			}
 			ha := privacy.MakeHash(nil, coded, keyB[:])
@@ -92,6 +102,7 @@ func bolda(metroBarn <-chan []models.Metrics) {
 		}
 		compressedBunch, err := middlas.Pack2gzip(marshalledBunch)
 		if err != nil {
+			<-fenix
 			return
 		}
 
@@ -119,6 +130,10 @@ func bolda(metroBarn <-chan []models.Metrics) {
 		resp, _ := req.
 			SetDoNotParseResponse(false).
 			Post("/updates/") // slash on the tile
+		if resp.StatusCode() == http.StatusOK { // при успешной отправке метрик обнуляем cчётчик
+			atomic.StoreInt64(&cunt, 0)		//	cunt = 0
+			
+		}
 
 		log.Printf("AGENT responce from server %+v\n", resp.StatusCode())
 	}

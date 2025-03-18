@@ -6,7 +6,8 @@ metricstest -test.v -test.run="^TestIteration10[AB]*$" ^
 -database-dsn=postgres://postgres:passwordas@localhost:5432/postgres
 
 
-curl localhost:8080/update/ -H "Content-Type":"application/json" -d "{\"type\":\"gauge\",\"id\":\"nam\",\"value\":77}"
+curl localhost:8080/update/ -H "Content-Type":"application/json" -d "{\"type\":\"counter\",\"id\":\"PollCount\",\"value\":77}"
+curl localhost:8080/value/ -H "Content-Type":"application/json" -d "{\"type\":\"counter\",\"id\":\"PollCount\"}"
 */
 
 package main
@@ -28,6 +29,7 @@ type Metrics = memos.Metrics
 type MemStorage = memos.MemoryStorageStruct
 
 var host = "localhost:8080"
+
 var sugar zap.SugaredLogger
 
 var ctx context.Context
@@ -64,7 +66,7 @@ func run() error {
 	router.HandleFunc("/value/", GetJSONMetric).Methods("POST")
 	router.HandleFunc("/", GetAllMetrix).Methods("GET")
 	router.HandleFunc("/", BadPost).Methods("POST") // if POST with wrong arguments structure
-	router.HandleFunc("/ping", purePinger).Methods("GET")
+	router.HandleFunc("/ping", DBPinger).Methods("GET")
 
 	router.Use(middlas.GzipHandleEncoder)
 	router.Use(middlas.GzipHandleDecoder)

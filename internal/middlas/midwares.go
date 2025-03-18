@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var sugar zap.SugaredLogger
-
 type responseData struct {
 	status int
 	size   int
@@ -54,9 +52,9 @@ func WithLogging(next http.Handler) http.Handler {
 			log.Println("cannot initialize zap")
 		}
 		defer logger.Sync()
-		sugar = *logger.Sugar()
+		sugar := *logger.Sugar()
 		sugar.Infoln(
-			"uri", r.RequestURI,
+			"uri", r.URL.Path, // какой именно эндпоинт был дернут
 			"method", r.Method,
 			"status", responseData.status, // получаем перехваченный код статуса ответа
 			"duration", duration,
