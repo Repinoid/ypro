@@ -5,7 +5,6 @@ import (
 	"gorono/internal/memos"
 	"gorono/internal/models"
 	"log"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -15,9 +14,9 @@ import (
 
 type TstHandlers struct {
 	suite.Suite
-	cmnd *exec.Cmd
-	t    time.Time
-	ctx  context.Context
+	//	cmnd *exec.Cmd
+	t   time.Time
+	ctx context.Context
 }
 
 func (suite *TstHandlers) SetupSuite() { // выполняется перед тестами
@@ -68,3 +67,5 @@ func TestHandlersSuite(t *testing.T) {
 	log.Println("before run")
 	suite.Run(t, new(TstHandlers))
 }
+
+// go test ./... -v -coverpkg=./...

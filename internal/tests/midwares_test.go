@@ -179,31 +179,5 @@ func thecap(rwr http.ResponseWriter, req *http.Request) { // хандлер дл
 	rwr.Write(telo)
 }
 
-// func initForTests() {
-// 	logger, err := zap.NewDevelopment()
-// 	if err != nil {
-// 		panic("cannot initialize zap")
-// 	}
-// 	defer logger.Sync()
-// 	models.Sugar = *logger.Sugar()
 
-// 	memStor = &MemStorage{
-// 		Gaugemetr: make(map[string]gauge),
-// 		Countmetr: make(map[string]counter),
-// 		Mutter:    &mtx,
-// 	}
-
-// 	if dbEndPoint == "" {
-// 		log.Println("No base in Env variable and command line argument")
-// 		models.Inter = memStor // если базы нет, подключаем in memory Storage
-// 		return
-// 	}
-// 	ctx = context.Background()
-// 	err = startDB(ctx, dbEndPoint)
-// 	if err != nil {
-// 		models.Inter = memStor // если не удаётся подключиться к базе, подключаем in memory Storage
-// 		log.Printf("Can't connect to DB %s\n", dbEndPoint)
-// 		return
-// 	}
-// 	models.Inter = dbStorage
-// }
+// go test ./... -v -coverpkg=./...

@@ -11,7 +11,6 @@ import (
 	"gorono/internal/models"
 	"gorono/internal/privacy"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -166,7 +165,7 @@ func CryptoHandleDecoder(next http.Handler) http.Handler {
 			ha := privacy.MakeHash(nil, telo, keyB[:])
 			haHex := hex.EncodeToString(ha)
 
-			log.Printf("%s from KEY %s\n%s from Header\n", haHex, models.Key, haInHeader)
+			//			log.Printf("%s from KEY %s\n%s from Header\n", haHex, models.Key, haInHeader)
 
 			if haHex != haInHeader { // несовпадение хешей вычисленного по ключу и переданного в header
 				rwr.WriteHeader(http.StatusBadRequest)
