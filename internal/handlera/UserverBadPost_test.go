@@ -1,7 +1,6 @@
-package tests
+package handlera
 
 import (
-	"gorono/internal/handlera"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +35,7 @@ func Test_badPost(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, tt.urla, nil)
 			w := httptest.NewRecorder()
-			handlera.BadPost(w, request)
+			BadPost(w, request)
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			defer res.Body.Close()

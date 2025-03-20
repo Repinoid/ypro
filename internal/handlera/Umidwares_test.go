@@ -1,10 +1,9 @@
-package tests
+package handlera
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"gorono/internal/handlera"
 	"gorono/internal/middlas"
 	"gorono/internal/models"
 	"io"
@@ -46,7 +45,7 @@ func (suite *TstHandlers) Test_gzipPutGet() {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        handlera.GetJSONMetric,
+			function:        GetJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -58,7 +57,7 @@ func (suite *TstHandlers) Test_gzipPutGet() {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        handlera.Buncheras,
+			function:        Buncheras,
 			metras:          bunch,
 			want: want{
 				code:     http.StatusOK,
@@ -70,7 +69,7 @@ func (suite *TstHandlers) Test_gzipPutGet() {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        handlera.PutJSONMetric,
+			function:        PutJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -82,7 +81,7 @@ func (suite *TstHandlers) Test_gzipPutGet() {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        handlera.GetJSONMetric,
+			function:        GetJSONMetric,
 			metr:            controlMetric,
 			want: want{
 				code:     http.StatusOK,
@@ -107,7 +106,7 @@ func (suite *TstHandlers) Test_gzipPutGet() {
 			AcceptEncoding:  "gzip",
 			ContentEncoding: "",
 			ContentType:     "application/json",
-			function:        handlera.PutJSONMetric,
+			function:        PutJSONMetric,
 			metr: models.Metrics{
 				MType: "gaug",
 				ID:    "Alloc",

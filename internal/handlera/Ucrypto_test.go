@@ -1,10 +1,9 @@
-package tests
+package handlera
 
 import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"gorono/internal/handlera"
 	"gorono/internal/models"
 	"gorono/internal/privacy"
 	"io"
@@ -61,8 +60,8 @@ func (suite *TstHandlers) Test_cryptas() {
 			models.Key = tt.key // for CryptoHandleDecoder
 			//fu := thecap
 			fu := tt.function
-			hfunc := http.HandlerFunc(fu)             // make handler from function
-			hh := handlera.CryptoHandleDecoder(hfunc) // оборачиваем в мидлварь который расшифрует
+			hfunc := http.HandlerFunc(fu)    // make handler from function
+			hh := CryptoHandleDecoder(hfunc) // оборачиваем в мидлварь который расшифрует
 			hh.ServeHTTP(w, request)
 
 			res := w.Body
