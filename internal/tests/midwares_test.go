@@ -179,5 +179,4 @@ func thecap(rwr http.ResponseWriter, req *http.Request) { // хандлер дл
 	rwr.Write(telo)
 }
 
-
 // go test ./... -v -coverpkg=./...

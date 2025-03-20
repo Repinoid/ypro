@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"gorono/internal/basis"
 	"gorono/internal/memos"
 	"gorono/internal/models"
 	"log"
@@ -17,6 +18,7 @@ type TstHandlers struct {
 	//	cmnd *exec.Cmd
 	t   time.Time
 	ctx context.Context
+	wt  models.Interferon
 }
 
 func (suite *TstHandlers) SetupSuite() { // выполняется перед тестами
@@ -24,10 +26,8 @@ func (suite *TstHandlers) SetupSuite() { // выполняется перед т
 	suite.ctx = context.Background()
 	suite.t = time.Now()
 
-	memStor := memos.InitMemoryStorage()
-	models.Inter = memStor
-
-	models.DBEndPoint = "postgres://postgres:passwordas@localhost:5432/forgo"
+	//memStor := memos.InitMemoryStorage()
+	models.Inter = suite.wt
 
 	// dbStorage, err := basis.InitDBStorage(suite.ctx, models.DBEndPoint)
 	// suite.Require().NoErrorf(err, "err %v", err)
@@ -63,9 +63,38 @@ func (suite *TstHandlers) TearDownSuite() { // // выполняется пос�
 //		err := Interbase.CloseBase(suite.ctx)
 //		suite.Require().NoErrorf(err, "err %v", err)
 //	}
+
 func TestHandlersSuite(t *testing.T) {
-	log.Println("before run")
-	suite.Run(t, new(TstHandlers))
+	testHandler := new(TstHandlers)
+	testHandler.ctx = context.Background()
+
+	models.DBEndPoint = "postgres://postgres:passwordas@localhost:5432/forgo"
+	dbStorage, err := basis.InitDBStorage(testHandler.ctx, models.DBEndPoint)
+	if err != nil {
+		log.Println("basis.InitDBStorage")
+		return
+	}
+
+	err = dbStorage.TablesDrop(testHandler.ctx) // для тестов удаляем таблицы
+	if err != nil {
+		log.Println("table DROP")
+		return
+	}
+	dbStorage.DB.Close(testHandler.ctx)
+
+	dbStorage, err = basis.InitDBStorage(testHandler.ctx, models.DBEndPoint)
+	if err != nil {
+		log.Println("basis.InitDBStorage 2222")
+		return
+	}
+
+	testHandler.wt = dbStorage // тест для базы в постгрес
+	log.Println("before run basis.InitDBStorage")
+	suite.Run(t, testHandler)
+
+	testHandler.wt = memos.InitMemoryStorage() // тест для базы в памяти
+	log.Println("before run memos.InitMemoryStorage")
+	suite.Run(t, testHandler)
 }
 
 // go test ./... -v -coverpkg=./...

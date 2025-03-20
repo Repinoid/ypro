@@ -29,6 +29,11 @@ func (suite *TstHandlers) Test_cryptas() {
 			key:         "keykey",
 			inputString: []byte("whtatToSend"),
 		},
+		{
+			name:        "crypto Right2",
+			key:         "key\"key\"dfgdfgdfg___6567567#$%$#",
+			inputString: []byte("whtatToSenddfgdfgdfg#$%#$%#$%dfgdfgdfgdfg\"dfgdfgdfgdfg"),
+		},
 	}
 
 	for _, tt := range tests {
