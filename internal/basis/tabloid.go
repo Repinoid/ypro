@@ -22,15 +22,16 @@ func InitDBStorage(ctx context.Context, dbEndPoint string) (*DBstruct, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't connect to DB %s err %w", dbEndPoint, err)
 	}
-	err = TableCreation(ctx, baza)
+	dbStorage.DB = baza
+	err = dbStorage.TableCreation(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("can't create tables in DB %s err %w", dbEndPoint, err)
 	}
-	dbStorage.DB = baza
 	return dbStorage, nil
 }
 
-func TableCreation(ctx context.Context, db *pgx.Conn) error {
+func (dataBase *DBstruct) TableCreation(ctx context.Context) error {
+	db := dataBase.DB
 	crea := "CREATE TABLE IF NOT EXISTS Gauge(metricname VARCHAR(50) PRIMARY KEY, value FLOAT8);"
 	tag, err := db.Exec(ctx, crea)
 	if err != nil {
