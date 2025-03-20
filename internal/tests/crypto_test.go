@@ -18,21 +18,28 @@ func (suite *TstHandlers) Test_cryptas() {
 	// 	response string
 	// 	//		err      error
 	// }
+	//controlMetric := models.Metrics{MType: "gauge", ID: "Alloc", Value: middlas.Ptr[float64](78)}
+	//cmMarshalled, _ := json.Marshal(controlMetric)
 
 	tests := []struct {
 		name        string
 		key         string
 		inputString []byte
+		metr        models.Metrics
+		function    func(http.ResponseWriter, *http.Request) //func4test
 	}{
 		{
 			name:        "crypto Right",
 			key:         "keykey",
 			inputString: []byte("whtatToSend"),
+			//			function:    handlera.PutMetric,
+			function: thecap,
 		},
 		{
 			name:        "crypto Right2",
 			key:         "key\"key\"dfgdfgdfg___6567567#$%$#",
 			inputString: []byte("whtatToSenddfgdfgdfg#$%#$%#$%dfgdfgdfgdfg\"dfgdfgdfgdfg"),
+			function:    thecap,
 		},
 	}
 
@@ -52,7 +59,8 @@ func (suite *TstHandlers) Test_cryptas() {
 			w := httptest.NewRecorder()
 
 			models.Key = tt.key // for CryptoHandleDecoder
-			fu := thecap
+			//fu := thecap
+			fu := tt.function
 			hfunc := http.HandlerFunc(fu)             // make handler from function
 			hh := handlera.CryptoHandleDecoder(hfunc) // оборачиваем в мидлварь который расшифрует
 			hh.ServeHTTP(w, request)
@@ -60,7 +68,7 @@ func (suite *TstHandlers) Test_cryptas() {
 			res := w.Body
 			telo, err := io.ReadAll(res)
 			suite.Assert().NoError(err)
-			suite.Assert().Equal(tt.inputString, telo)
+			suite.Assert().Equal(telo, tt.inputString)
 
 		})
 	}
