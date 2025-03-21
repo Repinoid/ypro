@@ -23,7 +23,7 @@ var pollInterval = 100
 
 //var key = ""
 
-var key = "keyForCrypta"
+var key = models.Key
 var rateLimit = 4
 var cunt int64
 
@@ -33,20 +33,20 @@ func main() {
 		return
 	}
 
-	//	if err := run(); err != nil {
-	if err := sendMetricsOnce(); err != nil {
+	if err := run(); err != nil {
+		//if err := sendMetricsOnce(); err != nil {
 
 		panic(err)
 	}
 }
 
 func run() error {
-	// marshalledGau, _ := json.Marshal(m1)
-	// postMetras(marshalledGau, "/update/")
-	// postMetras(marshalledGau, "/value/")
-	// marshalledCunt, _ := json.Marshal(m2)
-	// postMetras(marshalledCunt, "/update/")
-	// postMetras(marshalledCunt, "/value/")
+	marshalledGau, _ := json.Marshal(m1)
+	postMetras(marshalledGau, "/update/")
+	postMetras(marshalledGau, "/value/")
+	marshalledCunt, _ := json.Marshal(m2)
+	postMetras(marshalledCunt, "/update/")
+	postMetras(marshalledCunt, "/value/")
 
 	const chanCap = 4
 
@@ -130,7 +130,7 @@ func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 
 		_ = haHex
 		if key != "" {
-			req.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
+			req.Header.Add("HashSHA255", haHex) // Хеш в заголовок, значит - зашифровано
 		}
 
 		resp, err := req.
@@ -174,7 +174,6 @@ func sendMetricsOnce() error {
 		return err
 	}
 	var haHex string
-	//var compressedBunch []byte
 	if key != "" {
 		keyB := md5.Sum([]byte(key))
 		coded, err := privacy.EncryptB2B(marshalledBunch, keyB[:])
@@ -186,7 +185,6 @@ func sendMetricsOnce() error {
 		marshalledBunch = coded
 	}
 	compressedBunch, err := middlas.Pack2gzip(marshalledBunch)
-	//compressedBunch, err := middlas.Pack2gzip(coded)
 	if err != nil {
 		return err
 	}
@@ -195,14 +193,15 @@ func sendMetricsOnce() error {
 
 	req := httpc.R().
 		SetHeader("Content-Encoding", "gzip"). // сжаtо
+		//		SetHeader("HashSHA256", haHex).
 		//		SetBody(marshalledBunch).
 		SetBody(compressedBunch).
 		SetHeader("Accept-Encoding", "gzip")
 
 	_ = haHex
-	// if key != "" {
-	// 	httpc.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
-	// }
+	if key != "" {
+		httpc.Header.Add("HashSHA255", haHex) // Хеш в заголовок, значит - зашифровано
+	}
 	resp, err := req.
 		SetDoNotParseResponse(false).
 		Post("/updates/") // slash on the tile

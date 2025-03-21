@@ -142,7 +142,7 @@ func Buncheras(rwr http.ResponseWriter, req *http.Request) {
 		}
 		ha := privacy.MakeHash(nil, coded, keyB[:])
 		haHex := hex.EncodeToString(ha)
-		rwr.Header().Add("HashSHA256", haHex)
+		rwr.Header().Add("HashSHA255", haHex)
 	}
 
 	rwr.WriteHeader(http.StatusOK)
@@ -152,7 +152,7 @@ func Buncheras(rwr http.ResponseWriter, req *http.Request) {
 func CryptoHandleDecoder(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rwr http.ResponseWriter, req *http.Request) {
 
-		if haInHeader := req.Header.Get("HashSHA256"); haInHeader != "" { // если есть ключ переопределить req
+		if haInHeader := req.Header.Get("HashSHA255"); haInHeader != "" { // если есть ключ переопределить req
 			telo, err := io.ReadAll(req.Body)
 			if err != nil {
 				rwr.WriteHeader(http.StatusBadRequest)

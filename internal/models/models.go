@@ -47,5 +47,5 @@ var (
 	FileStorePath        = "./goshran.txt"
 	ReStore              = true
 	DBEndPoint           = ""
-	Key           string = ""
+	Key           string = "keyForCrypta"
 )
