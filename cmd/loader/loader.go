@@ -21,9 +21,9 @@ var host = "localhost:8080"
 var reportInterval = 100
 var pollInterval = 100
 
-var key = ""
+//var key = ""
 
-// var key = "keyForCrypta"
+var key = "keyForCrypta"
 var rateLimit = 4
 var cunt int64
 
@@ -33,18 +33,20 @@ func main() {
 		return
 	}
 
-	if err := run(); err != nil {
+	//	if err := run(); err != nil {
+	if err := sendMetricsOnce(); err != nil {
+
 		panic(err)
 	}
 }
 
 func run() error {
-	marshalledGau, _ := json.Marshal(m1)
-	postMetras(marshalledGau, "/update/")
-	postMetras(marshalledGau, "/value/")
-	marshalledCunt, _ := json.Marshal(m2)
-	postMetras(marshalledCunt, "/update/")
-	postMetras(marshalledCunt, "/value/")
+	// marshalledGau, _ := json.Marshal(m1)
+	// postMetras(marshalledGau, "/update/")
+	// postMetras(marshalledGau, "/value/")
+	// marshalledCunt, _ := json.Marshal(m2)
+	// postMetras(marshalledCunt, "/update/")
+	// postMetras(marshalledCunt, "/value/")
 
 	const chanCap = 4
 
@@ -98,6 +100,7 @@ func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 			return
 		}
 		var haHex string
+
 		if key != "" {
 			keyB := md5.Sum([]byte(key))
 
@@ -110,6 +113,7 @@ func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 			haHex = hex.EncodeToString(ha)
 			marshalledBunch = coded
 		}
+
 		compressedBunch, err := middlas.Pack2gzip(marshalledBunch)
 		if err != nil {
 			<-fenix
@@ -124,17 +128,18 @@ func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 			SetBody(compressedBunch).
 			SetHeader("Accept-Encoding", "gzip")
 
+		_ = haHex
 		if key != "" {
 			req.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
 		}
 
-		resp, _ := req.
-			SetDoNotParseResponse(false).
+		resp, err := req.
+			SetDoNotParseResponse(true).
 			Post("/updates/") // slash on the tile
 		if resp.StatusCode() == http.StatusOK { // при успешной отправке метрик обнуляем cчётчик
 			atomic.StoreInt64(&cunt, 0) //	cunt = 0
 		} else {
-			log.Printf("AGENT responce from server %+v\n", resp.StatusCode())
+			log.Printf("AGENT responce from server %+v Err %+v\n", resp.StatusCode(), err)
 		}
 	}
 }
@@ -158,4 +163,53 @@ func postMetras(body []byte, urla string) {
 			}
 		}
 	}()
+}
+
+func sendMetricsOnce() error {
+	memStorage := *memos.GetMetrixFromOS()
+	addMetrix := *memos.GetMoreMetrix()
+	memStorage = append(memStorage, addMetrix...)
+	marshalledBunch, err := json.Marshal(memStorage)
+	if err != nil {
+		return err
+	}
+	var haHex string
+	//var compressedBunch []byte
+	if key != "" {
+		keyB := md5.Sum([]byte(key))
+		coded, err := privacy.EncryptB2B(marshalledBunch, keyB[:])
+		if err != nil {
+			return err
+		}
+		ha := privacy.MakeHash(nil, coded, keyB[:])
+		haHex = hex.EncodeToString(ha)
+		marshalledBunch = coded
+	}
+	compressedBunch, err := middlas.Pack2gzip(marshalledBunch)
+	//compressedBunch, err := middlas.Pack2gzip(coded)
+	if err != nil {
+		return err
+	}
+	httpc := resty.New() //
+	httpc.SetBaseURL("http://" + host)
+
+	req := httpc.R().
+		SetHeader("Content-Encoding", "gzip"). // сжаtо
+		//		SetBody(marshalledBunch).
+		SetBody(compressedBunch).
+		SetHeader("Accept-Encoding", "gzip")
+
+	_ = haHex
+	// if key != "" {
+	// 	httpc.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
+	// }
+	resp, err := req.
+		SetDoNotParseResponse(false).
+		Post("/updates/") // slash on the tile
+	if resp.StatusCode() == http.StatusOK || err != nil { // при успешной отправке метрик обнуляем cчётчик
+		atomic.StoreInt64(&cunt, 0) //	cunt = 0
+	} else {
+		log.Printf("AGENT responce from server %+v Err %+v\n", resp.StatusCode(), err)
+	}
+	return nil
 }
