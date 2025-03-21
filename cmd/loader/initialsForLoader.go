@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func initAgent() error {
+func initLoader() error {
 	enva, exists := os.LookupEnv("ADDRESS")
 	if exists {
 		host = enva
@@ -44,7 +44,7 @@ func initAgent() error {
 
 	var hostFlag string
 	flag.StringVar(&hostFlag, "a", host, "Only -a={host:port} flag is allowed here")
-	flag.StringVar(&key, "k", key, "key")
+	flag.StringVar(&key, "k", key, "int")
 	reportIntervalFlag := flag.Int("r", reportInterval, "reportInterval")
 	pollIntervalFlag := flag.Int("p", pollInterval, "pollIntervalFlag")
 	rateLimitFlag := flag.Int("l", rateLimit, "rateLimitFlag")

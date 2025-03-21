@@ -18,16 +18,17 @@ import (
 )
 
 var host = "localhost:8080"
-var reportInterval = 10
-var pollInterval = 2
+var reportInterval = 100
+var pollInterval = 100
+
 var key = ""
 
-// var key = "12345"
+// var key = "keyForCrypta"
 var rateLimit = 4
 var cunt int64
 
 func main() {
-	if err := initAgent(); err != nil {
+	if err := initLoader(); err != nil {
 		log.Fatal("INTERVALS error ", err)
 		return
 	}
@@ -38,6 +39,12 @@ func main() {
 }
 
 func run() error {
+	marshalledGau, _ := json.Marshal(m1)
+	postMetras(marshalledGau, "/update/")
+	postMetras(marshalledGau, "/value/")
+	marshalledCunt, _ := json.Marshal(m2)
+	postMetras(marshalledCunt, "/update/")
+	postMetras(marshalledCunt, "/value/")
 
 	const chanCap = 4
 
@@ -52,15 +59,14 @@ func run() error {
 		fenix <- struct{}{}        // блокируем канал пока балда не прочитает из него при своём завершении по ошибке
 		go bolda(metroBarn, fenix) // нанимаем нового
 	}
+
 }
 
 // получает банчи метрик и складывает в barn
 func metrixIN(metroBarn chan<- []models.Metrics) {
 	memStorage := []models.Metrics{}
-	tickerPoll := time.NewTicker(100 * time.Millisecond)
-	tickerReport := time.NewTicker(100 * time.Millisecond)
-	// tickerPoll := time.NewTicker(time.Duration(pollInterval) * time.Second)
-	// tickerReport := time.NewTicker(time.Duration(reportInterval) * time.Second)
+	tickerPoll := time.NewTicker(time.Duration(pollInterval) * time.Millisecond)
+	tickerReport := time.NewTicker(time.Duration(reportInterval) * time.Millisecond)
 	for {
 		select {
 		case <-tickerPoll.C:
@@ -113,33 +119,43 @@ func bolda(metroBarn <-chan []models.Metrics, fenix <-chan struct{}) {
 		httpc := resty.New() //
 		httpc.SetBaseURL("http://" + host)
 
-		httpc.SetRetryCount(3)
-		httpc.SetRetryWaitTime(1 * time.Second)    // начальное время повтора
-		httpc.SetRetryMaxWaitTime(9 * time.Second) // 1+3+5
-		httpc.SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			rwt := client.RetryWaitTime
-			client.SetRetryWaitTime(rwt + 2*time.Second) //	увеличение времени ожидания на 2 сек
-			return client.RetryWaitTime, nil
-		})
-
 		req := httpc.R().
 			SetHeader("Content-Encoding", "gzip"). // сжаtо
 			SetBody(compressedBunch).
 			SetHeader("Accept-Encoding", "gzip")
 
-		_ = haHex
-		// if key != "" {
-		// 	req.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
-		// }
+		if key != "" {
+			req.Header.Add("HashSHA256", haHex) // Хеш в заголовок, значит - зашифровано
+		}
 
-		resp, err := req.
+		resp, _ := req.
 			SetDoNotParseResponse(false).
 			Post("/updates/") // slash on the tile
-		if resp.StatusCode() == http.StatusOK || err != nil { // при успешной отправке метрик обнуляем cчётчик
+		if resp.StatusCode() == http.StatusOK { // при успешной отправке метрик обнуляем cчётчик
 			atomic.StoreInt64(&cunt, 0) //	cunt = 0
-
 		} else {
-			log.Printf("AGENT responce from server %+v err %+v\n", resp.StatusCode(), err)
+			log.Printf("AGENT responce from server %+v\n", resp.StatusCode())
 		}
 	}
+}
+
+var m1 = models.Metrics{MType: "gauge", ID: "gaaga", Value: middlas.Ptr(777.77)}
+var m2 = models.Metrics{MType: "counter", ID: "cunt", Delta: middlas.Ptr[int64](777)}
+
+func postMetras(body []byte, urla string) {
+	tickerReport := time.NewTicker(time.Duration(reportInterval) * time.Millisecond)
+	go func() {
+		for range tickerReport.C {
+			httpc := resty.New() //
+			httpc.SetBaseURL("http://" + host)
+			req := httpc.R().
+				SetBody(body)
+			resp, err := req.
+				SetDoNotParseResponse(false).
+				Post(urla) // slash on the tile
+			if resp.StatusCode() != http.StatusOK || err != nil {
+				log.Printf("StatusCode %+v err %+v\n", resp.StatusCode(), err)
+			}
+		}
+	}()
 }

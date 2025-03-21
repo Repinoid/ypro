@@ -14,18 +14,20 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-
 	"gorono/internal/handlera"
 	"gorono/internal/memos"
 	"gorono/internal/middlas"
 	"gorono/internal/models"
+	"log"
+
+	"net/http"
+	"net/http/pprof"
+	_ "net/http/pprof"
 
 	"github.com/gorilla/mux"
-)
+) // подключаем пакет pprof
 
-//type Metrics = memos.Metrics
+// type Metrics = memos.Metrics
 type MemStorage = memos.MemoryStorageStruct
 
 var host = "localhost:8080"
@@ -58,19 +60,28 @@ func run() error {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", handlera.PutMetric).Methods("POST")
-	router.HandleFunc("/update/", handlera.PutJSONMetric).Methods("POST")
-	router.HandleFunc("/updates/", handlera.Buncheras).Methods("POST")
 	router.HandleFunc("/value/{metricType}/{metricName}", handlera.GetMetric).Methods("GET")
+
+	router.HandleFunc("/update/", handlera.PutJSONMetric).Methods("POST")
 	router.HandleFunc("/value/", handlera.GetJSONMetric).Methods("POST")
-	router.HandleFunc("/", handlera.GetAllMetrix).Methods("GET")
+
+	router.HandleFunc("/updates/", handlera.Buncheras).Methods("POST")	// for AGENT
+	router.HandleFunc("/", handlera.GetAllMetrix).Methods("GET")	// Вывод всех метрик на экран
 	router.HandleFunc("/", handlera.BadPost).Methods("POST") // if POST with wrong arguments structure
 	router.HandleFunc("/ping", handlera.DBPinger).Methods("GET")
+
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	router.Use(middlas.GzipHandleEncoder)
 	router.Use(middlas.GzipHandleDecoder)
 	router.Use(middlas.WithLogging)
 	router.Use(handlera.CryptoHandleDecoder)
 
+	//	return http.ListenAndServe(":8080", router)
 	return http.ListenAndServe(host, router)
 }
 
